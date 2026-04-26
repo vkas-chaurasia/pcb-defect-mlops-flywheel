@@ -1,0 +1,11 @@
+{
+    "name": "pcb-defect-model",
+    "implementation": "mlserver_torch.PyTorchModel",
+    "parameters": {
+        "uri": "./model.pth",
+        "extra": {
+            "model_class_name": "PCBDefectCNN",
+            "model_class_file": "src/training/model.py"
+        }
+    }
+}

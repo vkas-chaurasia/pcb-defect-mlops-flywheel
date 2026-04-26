@@ -1,4 +1,4 @@
-# MLOps Flywheel: Step-by-Step Execution Guide
+# MLOps Flywheel: Step-by-Step Execution Guide (Portable Edition)
 
 ## 🎙 The Technical Elevator Pitch (For Exams/Interviews)
 > *"In the data flywheel, retraining is controlled by a threshold-based trigger implemented inside the pipeline. While DVC detects data changes and GitHub Actions orchestrates execution, the pipeline logic compares the current dataset size with the last trained state and only retrains when a predefined threshold (e.g., 5-10 new samples) is reached."*
@@ -7,148 +7,127 @@
 
 ## Phase 1: Environment Initialization
 
-### 1.1 Project Setup (with `uv`)
-We use `uv` for lightning-fast package management.
+### 1.1 Project Setup
 ```bash
-# Initialize a new Python project
+# Initialize project
 uv init
-
-# Install core MLOps dependencies
 uv pip install dvc mlflow streamlit torch torchvision opencv-python label-studio-sdk
 ```
 
-### 1.2 Git & DVC Initialization
-Git tracks your code; DVC tracks your data and models.
+### 1.2 Portable DVC Setup
+This step makes the project 100% portable for your team.
 ```bash
-# Initialize Git (if not already done)
-git init
-
 # Initialize DVC
 dvc init
 
-# (Optional) Set up local storage for data
-mkdir /tmp/dvc_cache
-dvc cache dir /tmp/dvc_cache
+# Create the INTERNAL remote folder
+mkdir -p dvc-storage
+
+# Tell DVC to use this folder as the "Remote Server"
+dvc remote add -d localremote ./dvc-storage
 ```
 
 ---
 
 ## Phase 2: Building the Architecture
 
-### 2.1 Standard MLOps Folder Structure
-A modular structure ensures scalability.
+### 2.1 Folder Structure
 ```bash
-mkdir -p data/raw data/processed  # Data storage
+mkdir -p data/raw data/processed  # Working data
 mkdir -p models                   # Model weights
-mkdir -p src/data src/training    # Pipeline logic
-mkdir -p src/serving src/app      # Deployment & UI
-mkdir -p docker configs           # Orchestration
+mkdir -p src/data src/training    # Logic
+mkdir -p docker                   # Infrastructure
 ```
 
-### 2.2 Local Service Orchestration (Docker)
-We use Docker Compose to run infrastructure without installing things manually on the OS.
-*   **MLflow**: Port 5000 (Tracking)
-*   **Label Studio**: Port 8080 (Human labeling)
-*   **MLServer**: Port 8081 (Inference)
-
-Run with: `docker-compose -f docker/docker-compose.yml up -d`
+### 2.2 Local Services
+Start MLflow, Label Studio, and lakeFS:
+`docker-compose -f docker/docker-compose.yml up -d`
 
 ---
 
-## Phase 3: The Active Learning Flywheel
+## Phase 3: The Flywheel Workflow
 
-### 3.1 Data Versioning (DVC)
-When you add new images to `data/raw/`:
+### 3.1 Adding Data (The DVC Cycle)
 ```bash
-dvc add data/raw
-git add data/raw.dvc .gitignore
-git commit -m "Add new raw data"
+# 1. Add images to the working folder
+cp my_pcb_image.jpg data/raw/
+
+# 2. Add to DVC (this creates the .dvc receipt)
+dvc add data/raw/my_pcb_image.jpg
+
+# 3. Push to the internal "Remote"
+dvc push
 ```
-
-### 3.2 Defining the Pipeline (`dvc.yaml`)
-This file automates the execution. You define "stages" like `preprocess` and `train`.
-```yaml
-stages:
-  preprocess:
-    cmd: python src/data/preprocess.py
-    deps:
-      - data/raw
-      - src/data/preprocess.py
-    outs:
-      - data/processed
-  train:
-    cmd: python src/training/train.py
-    deps:
-      - data/processed
-      - src/training/train.py
-    outs:
-      - models/model.pth
-```
-
-### 3.3 Executing the Loop
-Whenever new labels arrive from Label Studio:
-```bash
-# Pull new labels (using our sync script)
-python src/utils/sync_labels.py
-
-# Reproduce the entire pipeline automatically
-dvc repro
-```
-
----
-
-## Phase 4: Verification for Exams
-To prove your system works, show these three "Truths":
-1.  **Code Truth**: `git log` shows the history of your experiments.
-2.  **Data Truth**: `dvc dag` shows the visual graph of your data pipeline.
-3.  **Performance Truth**: Open `http://localhost:5000` (MLflow) to show accuracy improvements over time.
-
----
-
-## Phase 5: Local CI/CD with `act` (Optional/Pro)
-
-If you want to simulate GitHub Actions locally without pushing to GitHub:
-1.  **Install act**: `brew install nektos/tap/act`
-2.  **Create Workflow**: Define your pipeline in `.github/workflows/train.yml`.
-3.  **Run Locally**:
-    ```bash
-    # Run the "push" event workflows locally
-    act push
-    ```
-This is perfect for testing your automation logic entirely offline.
-
----
-
-## Phase 6: Team Collaboration (The "Lean" Way)
-
-In a university project, you don't need paid servers. You use **Git** as your shared logbook.
-
-### 6.1 Collaborative Training Flow
-1.  **Teammate A** runs `dvc repro` and gets a new model.
-2.  They commit:
-    *   `data/raw.dvc` (The new data pointer)
-    *   `models/model.pth.dvc` (The new model pointer)
-    *   `metrics.json` (The accuracy/loss results)
-3.  **Teammate B** runs `git pull`.
-4.  They immediately see the new `metrics.json` and know the model improved.
-5.  They run `dvc pull` to download the actual model files.
-
-### 6.2 Shared Data Storage
-*   If you have a shared network drive: `dvc remote add -d shared_drive /path/to/drive`
 *   If working independently: Everyone keeps their own `../dvc_storage`. DVC ensures everyone is "in sync" via the `.dvc` receipts.
 
 ---
 
-## Phase 7: Advanced Data Lake Management (lakeFS)
+## Phase 4: Running the Engine
 
-For large-scale industry projects, we use **lakeFS** to manage our data like a Git repository.
+### 4.1 Initial Training (Local)
+Before starting the flywheel, you need a baseline model.
+```bash
+# Run the pipeline locally on your Mac
+dvc repro
+```
+This creates your first `models/model.pth`.
 
-### 7.1 Why lakeFS?
-- **Branching**: Create a "sandbox" of 10TB of data in 1 second.
-- **Hooks**: Automatically run data quality tests before merging new labels.
-- **Rollback**: Instantly revert to a previous state if a bad dataset is introduced.
+### 4.2 The Automated Flywheel (via act)
+Once the project is live, you use **Automation** to retrain.
+1. **Sync**: `python src/utils/sync_labels.py` (Pull new human labels).
+2. **Automate**: `act push` (The Driver).
+3. **Internal Logic**:
+   - `act` counts the images.
+   - If >= 5, it runs `dvc repro` inside a Docker container.
+   - It promotes the model to `models/` ONLY if accuracy is high.
+Defense (If asked about `dvc-storage`)
+> *"For this university project, we placed the DVC remote folder inside the repository. This ensures that the project is 100% portable for the grading team. In a real-world industry setup, this `dvc-storage` would be an external S3 bucket, but the commands (`dvc push/pull`) would be identical."*
 
-### 7.2 Running Locally
-1.  **Start Services**: `docker-compose up -d`
-2.  **Access UI**: `http://localhost:8000`
-3.  **Exam Pro Tip**: Mention that lakeFS provides "Git-like operations" for object storage (S3/GCS/MinIO), allowing for reproducible data environments at the petabyte scale.
+---
+
+## Phase 5: Team Collaboration (Zero-Config)
+
+1. **Member A (You)**: Pushes code and the `dvc-storage` folder to GitHub.
+2. **Member B (Teammate)**: 
+   ```bash
+   git clone <repo_url>
+   dvc pull  # Works instantly because dvc-storage is right there!
+   ```
+
+---
+
+## Phase 6: Local Automation with `act`
+- **act**: Run `act push` to test your GitHub Actions locally.
+
+---
+
+## Phase 7: Professional Model Serving (MLServer)
+
+Instead of the app loading the model directly, we use **MLServer** for production-grade inference.
+
+### 7.1 The "Hot-Reload" Logic
+- **Architecture**: The `mlserver` container watches the `models/` folder.
+- **Inference**: The Streamlit app sends REST requests to `http://localhost:8081`.
+- **Zero Downtime**: When a new `model.pth` is saved, MLServer reloads it in milliseconds without stopping the app.
+
+---
+
+## Phase 8: Model Promotion & The "Judge"
+
+We never publish a bad model. The **GitHub Action (act)** acts as the Judge.
+
+### 8.1 The Promotion Workflow
+1.  **Evaluate**: The CI/CD script checks the new model's accuracy in MLflow.
+2.  **Threshold**: If accuracy > 90% AND better than the current model.
+3.  **Deploy**: The script copies the new model to `models/model.pth`.
+1. **Member A (You)**: Pushes code and the `dvc-storage` folder to GitHub.
+2. **Member B (Teammate)**: 
+   ```bash
+   git clone <repo_url>
+   dvc pull  # Works instantly because dvc-storage is right there!
+   ```
+
+---
+
+## Phase 6: Local Automation with `act`
+- **act**: Run `act push` to test your GitHub Actions locally.

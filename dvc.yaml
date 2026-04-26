@@ -1,0 +1,20 @@
+stages:
+  preprocess:
+    cmd: python src/data/preprocess.py
+    deps:
+      - data/raw
+      - src/data/preprocess.py
+    outs:
+      - data/processed
+  
+  train:
+    cmd: python src/training/train.py
+    deps:
+      - data/processed
+      - src/training/train.py
+      - src/training/model.py
+      - configs/config.yaml
+    outs:
+      - models/model.pth
+    metrics:
+      - mlruns/  # (Optional: MLflow logs as metrics)

@@ -9,13 +9,17 @@ The system is designed to be orchestrated entirely **locally** using Docker and 
 1.  **DVC Data Versioning**: Manages datasets in `data/raw` and `data/processed`.
 2.  **PyTorch Training**: CNN-based defect detection trained in `src/training/`.
 3.  **MLflow Tracking**: All experiments, parameters, and model versions are logged to a local MLflow server.
-4.  **Local Orchestration**: Docker Compose manages MLflow, Label Studio, and MLServer.
-5.  **MLServer (Backend)**: Serves the PyTorch model via a REST API.
-6.  **Streamlit (Frontend)**: User interface for uploading PCB images and visualizing predictions.
-7.  **Active Learning Loop**: 
-    *   Low-confidence predictions are automatically flagged.
-    *   Images are sent to **Label Studio** for human review.
-    *   Labeled data is synced back to trigger a **DVC Reproduction** (`dvc repro`).
+4.  **Local Orchestration**: Docker Compose manages MLflow and Label Studio.
+5.  **MLServer (Professional Serving)**: Serves the PyTorch model via a V2-compatible REST API on port **8081**.
+6.  **Streamlit (Frontend)**: User interface that communicates with MLServer for real-time predictions.
+7.  **Model Promotion**: The CI/CD pipeline (act) acts as a "Judge," only deploying models that meet accuracy thresholds.
+8.  **Active Learning Loop**: 
+    *   **Trigger**: Low-confidence predictions (e.g. < 80%) are automatically flagged.
+    *   **Label**: Images are sent to **Label Studio** for human review.
+    *   **Sync**: Labeled data is pulled back into the repo using `src/utils/sync_labels.py`.
+    *   **Automated Retrain**: Running `act push` triggers the **CI/CD Driver**.
+    *   **The Gatekeeper**: The CI/CD script only runs `dvc repro` if the **new sample threshold** (e.g. 5 images) is met.
+    *   **Promotion**: If the new model is better, it is automatically deployed to **MLServer**.
 
 ## 📁 Project Structure
 

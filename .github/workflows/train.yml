@@ -1,0 +1,56 @@
+name: PCB MLOps Flywheel Training
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/checkout@v3
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          pip install dvc[all] mlflow torch torchvision opencv-python pyyaml
+
+      - name: Pull Data from DVC
+        run: |
+          # Since we are running locally with 'act', DVC will look at ./dvc-storage
+          dvc pull
+
+      - name: 🛡️ The Gatekeeper: Check Training Threshold
+        id: gatekeeper
+        run: |
+          # Count the number of images in data/raw
+          COUNT=$(find data/raw -type f | wc -l)
+          THRESHOLD=1
+          
+          echo "Current image count: $COUNT"
+          echo "Required threshold: $THRESHOLD"
+          
+          if [ "$COUNT" -ge "$THRESHOLD" ]; then
+            echo "✅ Threshold reached. Proceeding to retraining."
+            echo "should_train=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Not enough new data yet. Skipping retraining."
+            echo "should_train=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🚀 Execute DVC Pipeline
+        if: steps.gatekeeper.outputs.should_train == 'true'
+        run: |
+          dvc repro
+          
+      - name: 📊 Log Final Status
+        if: always()
+        run: |
+          echo "Pipeline execution status: ${{ job.status }}"
