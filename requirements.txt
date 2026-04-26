@@ -1,0 +1,18 @@
+# Core Dependencies
+torch
+torchvision
+opencv-python
+pyyaml
+python-dotenv
+
+# MLOps & Tracking
+dvc
+mlflow
+
+# Serving & UI
+streamlit
+mlserver
+mlserver-torch
+
+# Human-in-the-Loop
+label-studio-sdk

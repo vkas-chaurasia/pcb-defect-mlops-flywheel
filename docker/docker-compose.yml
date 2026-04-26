@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # Experiment Tracking
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ../mlruns:/mlflow/mlruns
+    command: mlflow server --host 0.0.0.0
+
+  # Human-in-the-Loop Labeling
+  label-studio:
+    image: heartexlabs/label-studio:latest
+    container_name: label-studio
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../label_studio_data:/label-studio/data
+
+  # Inference Server (Placeholder for now)
+  mlserver:
+    image: seldonio/mlserver:latest
+    container_name: mlserver
+    ports:
+      - "8081:8080"
+    volumes:
+      - ../models:/models
+    environment:
+      - MLSERVER_MODEL_REPOSITORY_ROOT=/models
+
+  # Data Lake Management (Pro Feature)
+  lakefs:
+    image: treeverse/lakefs:latest
+    container_name: lakefs
+    ports:
+      - "8000:8000"
+    environment:
+      - LAKEFS_DATABASE_CONNECTION_STRING=postgres://lakefs:lakefs@lakefs-db:5432/lakefs?sslmode=disable
+      - LAKEFS_AUTH_ENCRYPT_SECRET_KEY=setup-only-secret-key
+    depends_on:
+      - lakefs-db
+
+  lakefs-db:
+    image: postgres:15-alpine
+    container_name: lakefs-db
+    environment:
+      - POSTGRES_USER=lakefs
+      - POSTGRES_PASSWORD=lakefs
+      - POSTGRES_DB=lakefs
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lakefs"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
