@@ -217,7 +217,8 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# DVC
-dvc-storage/
+# DVC Portable Storage (Track buckets, ignore system files)
+dvc-storage/.rustfs.sys/
+dvc-storage/logs/
 .dvc/cache/
 .dvc/tmp/
