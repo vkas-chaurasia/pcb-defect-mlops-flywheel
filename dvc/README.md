@@ -8,6 +8,7 @@ This guide explains how we handle large datasets (images, model weights) in this
 *   **Workspace (`data/raw/`)**: This is where you work. Your scripts read data from here.
 *   **Vault (`dvc-storage` / RustFS)**: This is our shared backup. DVC stores every version of our data here. We never touch these files manually.
 
+
 ### 2. How it works (Portable Mode)
 Our project is configured for **100% Portability**. This means our "Vault" is stored directly inside the repository in the `dvc-storage/` folder.
 
