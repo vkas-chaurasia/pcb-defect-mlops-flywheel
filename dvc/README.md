@@ -8,11 +8,13 @@ This guide explains how we handle large datasets (images, model weights) in this
 *   **Workspace (`data/raw/`)**: This is where you work. Your scripts read data from here.
 *   **Vault (`dvc-storage` / RustFS)**: This is our shared backup. DVC stores every version of our data here. We never touch these files manually.
 
-### 2. How it works
-1.  **Track**: When you add new data to `data/raw/`, run `dvc add`. DVC creates a `.dvc` receipt and moves the heavy file to the local cache.
-2.  **Commit**: You commit the tiny `.dvc` receipt to Git.
-3.  **Push**: Run `dvc push` to upload your data to our shared RustFS storage so the rest of the team can access it.
-4.  **Pull**: When you clone the repo, run `dvc pull` to download the actual data files based on the receipts in Git.
+### 2. How it works (Portable Mode)
+Our project is configured for **100% Portability**. This means our "Vault" is stored directly inside the repository in the `dvc-storage/` folder.
+
+1.  **Track**: Put your data in `data/raw/` and run `dvc add`. This creates a tiny `.dvc` receipt.
+2.  **Push**: Run `dvc push`. This moves your data into the local `dvc-storage/` vault.
+3.  **Commit**: Run `git add .` to stage both your `.dvc` receipts AND the new data in `dvc-storage/`.
+4.  **Sync**: Your team runs `git pull` followed by `dvc pull`. DVC will automatically reconstruct the files in their `data/raw/` folder using the vault data they just pulled from Git.
 
 ---
 

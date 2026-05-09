@@ -6,7 +6,7 @@ This repository implements an end-to-end MLOps pipeline for detecting defects on
 
 The system is designed to be orchestrated entirely **locally** using Docker and DVC.
 
-1.  **DVC Data Versioning**: Manages datasets in `data/raw` and `data/processed`.
+1.  **DVC Data Versioning**: Manages datasets in `data/raw`.
 2.  **PyTorch Training**: CNN-based defect detection trained in `src/training/`.
 3.  **MLflow Tracking**: All experiments, parameters, and model versions are logged to a local MLflow server.
 4.  **Local Orchestration**: Docker Compose manages MLflow and Label Studio.
@@ -25,7 +25,7 @@ The system is designed to be orchestrated entirely **locally** using Docker and 
 
 ```text
 .
-├── data/                   # Versioned data (Raw & Processed)
+├── data/                   # Versioned data (Raw)
 ├── models/                 # Trained model artifacts
 ├── src/
 │   ├── data/               # OpenCV preprocessing scripts
