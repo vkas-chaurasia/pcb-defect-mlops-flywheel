@@ -30,3 +30,26 @@ services:
       - ../models:/models
     environment:
       - MLSERVER_MODEL_REPOSITORY_ROOT=/models
+  # S3-compatible Remote Storage (Apache 2.0)
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: rustfs
+    restart: unless-stopped
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # Console
+    environment:
+      - RUSTFS_ADDRESS=0.0.0.0:9000
+      - RUSTFS_CONSOLE_ADDRESS=0.0.0.0:9001
+      - RUSTFS_CONSOLE_ENABLE=true
+      - RUSTFS_ACCESS_KEY=rustfsadmin
+      - RUSTFS_SECRET_KEY=rustfsadmin
+      - RUSTFS_VOLUMES=/data
+    volumes:
+      - ../dvc-storage:/data
+      - ./rustfs_logs:/app/logs
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:9000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
