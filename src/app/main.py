@@ -15,33 +15,36 @@ st.set_page_config(
 )
 
 # --- Configuration ---
-MLSERVER_URL = os.getenv("MLSERVER_URL", "http://localhost:8081/v2/models/pcb-defect-model/infer")
 FASTAPI_URL = os.getenv("FASTAPI_URL", "http://localhost:8000")
 SIMULATION_DIR = Path("data/raw/unseen_simulation")
 
-# --- Custom CSS for Premium Look ---
-st.markdown("""
-    <style>
-    .main {
-        background-color: #0e1117;
-    }
-    .stMetric {
-        background-color: #1e2130;
-        padding: 15px;
-        border-radius: 10px;
-        border: 1px solid #3e4251;
-    }
-    .status-card {
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        border-left: 5px solid #ff4b4b;
-        background-color: #1e2130;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
 # --- Helper Functions ---
+def draw_boxes(image, detections):
+    """Draws bounding boxes and labels on the image."""
+    from PIL import ImageDraw, ImageFont
+    draw = ImageDraw.Draw(image)
+    
+    # Try to load a font, fallback to default
+    try:
+        font = ImageFont.truetype("Arial.ttf", 20)
+    except:
+        font = ImageFont.load_default()
+
+    for det in detections:
+        box = det['bbox_xyxy']
+        label = f"{det['class_name']} {det['confidence']:.2%}"
+        
+        # Draw rectangle
+        draw.rectangle(box, outline="#ff4b4b", width=4)
+        
+        # Draw label background
+        text_size = draw.textbbox((0, 0), label, font=font)
+        draw.rectangle([box[0], box[1] - 25, box[0] + (text_size[2]-text_size[0]) + 10, box[1]], fill="#ff4b4b")
+        
+        # Draw text
+        draw.text((box[0] + 5, box[1] - 25), label, fill="white", font=font)
+    
+    return image
 def predict_via_fastapi(image):
     """Sends image to our Custom FastAPI server (port 8000)."""
     try:
@@ -106,32 +109,30 @@ with tabs[0]:
             st.image(image, caption="Uploaded PCB", use_container_width=True)
 
     with col2:
-        st.header("🤖 Real-time Inference")
+        st.header("🤖 Detection Results")
         if uploaded_file is not None:
             with st.spinner("Analyzing with YOLOv8..."):
                 data, success = predict_via_fastapi(image)
                 
                 if success:
+                    # Draw boxes on a copy of the image
+                    annotated_image = draw_boxes(image.copy(), data['detections'])
+                    st.image(annotated_image, caption="Inference Result", use_container_width=True)
+
                     # Metrics
                     m1, m2 = st.columns(2)
-                    m1.metric("Result", data['pass_fail'], delta=None, delta_color="normal")
-                    m2.metric("Defects", data['num_detections'])
+                    result_color = "inverse" if data['pass_fail'] == "FAIL" else "normal"
+                    m1.metric("Status", data['pass_fail'], delta=None, delta_color=result_color)
+                    m2.metric("Defects Found", data['num_detections'])
                     
                     if data['pass_fail'] == "FAIL":
-                        st.error(f"❌ {data['num_detections']} Defect(s) detected!")
-                        for det in data['detections']:
-                            st.write(f"- **{det['class_name']}**: {det['confidence']:.2%}")
+                        st.error(f"⚠️ {data['num_detections']} Defect(s) detected!")
                     else:
                         st.success("✅ PCB Passed Inspection")
                     
-                    # Flywheel Logic (Manual Override)
-                    st.divider()
-                    st.markdown("#### 🔄 Human-in-the-Loop")
-                    if st.button("Flag for Human Review (Label Studio)"):
-                        st.info("Task routed to Label Studio for verification.")
-                        st.toast("Feedback sent to training loop!")
-                else:
-                    st.error(f"Inference failed: {data}")
+                    # Details
+                    with st.expander("View Detection Details"):
+                        st.json(data['detections'])
         else:
             st.info("Upload an image to start real-time defect detection.")
 

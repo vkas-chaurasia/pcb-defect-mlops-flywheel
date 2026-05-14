@@ -2,6 +2,9 @@ import os
 import requests
 import yaml
 from label_studio_sdk import Client
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Load configuration
 with open("configs/config.yaml", "r") as f:

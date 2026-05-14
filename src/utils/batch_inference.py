@@ -3,6 +3,10 @@ import requests
 import json
 from pathlib import Path
 from label_studio_sdk import Client
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # --- Configuration ---
 API_URL = os.getenv("INFERENCE_API_URL", "http://localhost:8000")
@@ -45,7 +49,7 @@ def upload_to_label_studio(image_path, prediction_data):
         # For local dev, we can use the SDK's import method
         project.import_tasks([{
             "data": {
-                "image": f"/data/local-files/?d=unseen_simulation/{image_path.name}"
+                "image": f"{API_URL}/data/raw/unseen_simulation/{image_path.name}"
             },
             "predictions": [{
                 "model_version": "v1-automated",
