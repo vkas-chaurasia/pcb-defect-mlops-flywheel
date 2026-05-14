@@ -1,4 +1,4 @@
-# PCB Defect Detection MLOps Flywheel
+# PCB Defect Detection System
 
 This repository implements an end-to-end MLOps pipeline for detecting defects on PCBs (Printed Circuit Boards). It features an **Active Learning Flywheel** that allows for continuous model improvement via human-in-the-loop labeling.
 
@@ -11,10 +11,10 @@ The system is designed to be orchestrated entirely **locally** using Docker and 
 3.  **MLflow Tracking**: All experiments, parameters, and model versions are logged to a local MLflow server.
 4.  **Local Orchestration**: Docker Compose manages MLflow and Label Studio.
 5.  **FastAPI (Custom Serving)**: High-performance inference engine with built-in **PASS/FAIL** logic and Swagger UI on port **8000**. Supports `/predict/batch`.
-6.  **Automated Flywheel**: A batch processor (`src/utils/batch_inference.py`) that automatically routes failures to Label Studio.
-7.  **Streamlit Dashboard**: A premium UI for live testing and manual flywheel orchestration.
+6.  **Automated Pipeline**: A batch processor (`src/utils/batch_inference.py`) that automatically routes failures to Label Studio.
+7.  **Streamlit Dashboard**: A premium UI for live testing and manual pipeline orchestration.
 8.  **Active Learning Loop**: 
-    *   **Trigger**: The flywheel controller scans `data/raw/unseen_simulation`.
+    *   **Trigger**: The system controller scans `data/raw/unseen_simulation`.
     *   **Filter**: All "FAIL" results or low-confidence predictions are automatically flagged.
     *   **Label**: Images are sent to **Label Studio** for human review.
     *   **Sync**: Labeled data is pulled back using `src/utils/sync_labels.py`.

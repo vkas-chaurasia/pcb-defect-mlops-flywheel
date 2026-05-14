@@ -8,7 +8,7 @@ from pathlib import Path
 import subprocess
 
 st.set_page_config(
-    page_title="PCB Defect Detection Flywheel",
+    page_title="PCB Defect Detection System",
     page_icon="🔍",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -79,20 +79,20 @@ with st.sidebar:
         
     st.divider()
     
-    if st.button("🚀 Trigger Automated Flywheel", use_container_width=True):
+    if st.button("🚀 Trigger Active Learning Loop", use_container_width=True):
         with st.status("Running Batch Inference...", expanded=True) as status:
             st.write("Scanning `data/raw/unseen_simulation`...")
             # We run the script as a subprocess to simulate a real MLOps trigger
             result = subprocess.run(["python", "src/utils/batch_inference.py"], capture_output=True, text=True)
             st.code(result.stdout)
-            status.update(label="Flywheel Cycle Complete!", state="complete", expanded=False)
+            status.update(label="Active Learning Cycle Complete!", state="complete", expanded=False)
         st.balloons()
 
 # --- MAIN UI ---
-st.title("🔍 PCB Defect Detection Flywheel")
-st.markdown("### Professional MLOps Active Learning Pipeline")
+st.title("🔍 PCB Defect Detection System")
+st.markdown("### MLOps Active Learning Pipeline")
 
-tabs = st.tabs(["🎮 Interactive Sandbox", "📊 Flywheel Dashboard"])
+tabs = st.tabs(["🎮 Interactive Sandbox", "📊 Dashboard"])
 
 with tabs[0]:
     col1, col2 = st.columns([1, 1])
@@ -136,7 +136,7 @@ with tabs[0]:
             st.info("Upload an image to start real-time defect detection.")
 
 with tabs[1]:
-    st.header("📈 Automated Flywheel Stats")
+    st.header("📈 Active Learning Stats")
     
     img_count, img_list = get_flywheel_stats()
     

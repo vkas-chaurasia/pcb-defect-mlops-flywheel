@@ -1,5 +1,5 @@
 def main():
-    print("Hello from pcb-defect-mlops-flywheel!")
+    print("Hello from pcb-defect-mlops-system!")
 
 
 if __name__ == "__main__":

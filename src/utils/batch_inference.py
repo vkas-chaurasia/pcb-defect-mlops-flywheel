@@ -67,7 +67,7 @@ def upload_to_label_studio(image_path, prediction_data):
         return False
 
 def main():
-    print(f"🚀 Starting Flywheel Batch Inference on: {DATA_DIR}")
+    print(f"🚀 Starting Automated Batch Inference on: {DATA_DIR}")
     
     # 1. Discover images (only .jpg or .png)
     image_extensions = (".jpg", ".jpeg", ".png")
@@ -112,7 +112,7 @@ def main():
             else:
                 print(f"✅ {img_path.name}: PASS. Model is confident.")
 
-    print("\n✅ Flywheel batch processing complete.")
+    print("\n✅ Batch processing complete.")
 
 if __name__ == "__main__":
     main()
