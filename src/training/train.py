@@ -161,17 +161,14 @@ def main():
             import subprocess
             commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
             
-            # Log the YOLO yaml as the dataset source with Git info
-            dataset_source = mlflow.data.dataset_source.DatasetSource()
-            mlflow.log_input(
-                mlflow.data.dataset.Dataset(
-                    source=dataset_source, 
-                    name="pcb-yolo-dataset", 
-                    targets=str(yaml_path),
-                    digest=commit_hash[:8] # Use short commit as digest
-                ),
-                context="training"
+            # Log as a formal dataset using from_dict for flexibility
+            dataset = mlflow.data.from_dict(
+                data={"path": str(yaml_path)},
+                name="pcb-yolo-dataset",
+                digest=commit_hash[:8]
             )
+            mlflow.log_input(dataset, context="training")
+            
             mlflow.set_tag("git_commit", commit_hash)
             print(f"Formal dataset lineage logged (Commit: {commit_hash[:8]})")
         except Exception as e:
