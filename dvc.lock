@@ -19,3 +19,21 @@ stages:
       md5: 0b70b6afb12e8c29f81bfe586b220e28.dir
       size: 22480035
       nfiles: 4
+  train:
+    cmd: python3 src/training/train.py --epochs 2 --img-size 224
+    deps:
+    - path: data/processed
+      hash: md5
+      md5: 0b70b6afb12e8c29f81bfe586b220e28.dir
+      size: 22480035
+      nfiles: 4
+    - path: src/training/train.py
+      hash: md5
+      md5: 1928a6233a204fbcb56caea9bcebeae4
+      size: 6491
+    outs:
+    - path: mlruns/
+      hash: md5
+      md5: 45abecbde4dc5039fdb122008c33889c.dir
+      size: 258851862
+      nfiles: 268
