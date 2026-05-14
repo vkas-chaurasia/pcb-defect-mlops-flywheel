@@ -1,2 +1,0 @@
-dvc[s3]
-# Optional: Add any other data-specific tools here

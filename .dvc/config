@@ -1,10 +1,19 @@
 [core]
-    no_scm = True
-    remote = rustfs-test
+    remote = pcb-vault
 ['remote "localremote"']
     url = ../dvc-storage
-['remote "rustfs-test"']
-    url = s3://pcb-test-bucket
+['remote "pcb-vault"']
+    url = s3://pcb-defect-data
+    endpointurl = http://localhost:9000
+    access_key_id = rustfsadmin
+    secret_access_key = rustfsadmin
+['remote "logs-storage"']
+    url = s3://pcb-experiment-logs
+    endpointurl = http://localhost:9000
+    access_key_id = rustfsadmin
+    secret_access_key = rustfsadmin
+['remote "models-storage"']
+    url = s3://pcb-production-models
     endpointurl = http://localhost:9000
     access_key_id = rustfsadmin
     secret_access_key = rustfsadmin
