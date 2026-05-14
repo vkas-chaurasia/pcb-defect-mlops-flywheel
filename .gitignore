@@ -226,3 +226,5 @@ dvc-storage/logs/
 runs/
 mlruns/
 *.pt
+label_studio_data/
+server.log
