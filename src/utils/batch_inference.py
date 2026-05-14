@@ -106,9 +106,10 @@ def main():
             
             if should_review:
                 print(f"🔍 {img_path.name}: {reason}. Routing to Label Studio...")
-                # In simulation, we just print this. 
-                # Uncomment the line below when Label Studio is configured.
-                # upload_to_label_studio(img_path, pred)
+                if LS_API_KEY == "your_api_key_here":
+                    print("⚠️ Skipping upload: Please set LS_API_KEY in src/utils/batch_inference.py")
+                else:
+                    upload_to_label_studio(img_path, pred)
             else:
                 print(f"✅ {img_path.name}: PASS. Model is confident.")
 
