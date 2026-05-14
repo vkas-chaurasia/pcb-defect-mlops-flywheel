@@ -161,9 +161,9 @@ def main():
             import subprocess
             commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
             
-            # Log as a formal dataset using from_dict for flexibility
-            dataset = mlflow.data.from_dict(
-                data={"path": str(yaml_path)},
+            # Log as a formal dataset using the base Dataset class for maximum compatibility
+            dataset = mlflow.data.dataset.Dataset(
+                source=mlflow.data.dataset_source.DatasetSource(),
                 name="pcb-yolo-dataset",
                 digest=commit_hash[:8]
             )
