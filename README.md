@@ -63,3 +63,14 @@ The system is designed to be orchestrated entirely **locally** using Docker and 
    ```bash
    .venv/bin/python src/serving/serve.py
    ```
+
+## ⚖️ License & Attribution
+
+### Dataset
+This project uses the **DeepPCB** dataset from the research paper:
+> *Tang, S., et al. "On-line PCB Defect Detector On A New PCB Defect Dataset." (2019).*
+
+**Important**: Per the original authors' request, this dataset is for **research purposes only**. Please refer to the [DeepPCB GitHub Repository](https://github.com/tangsanli5201/DeepPCB) for more details.
+
+### Code
+The MLOps infrastructure and FastAPI implementation in this repository are licensed under the **MIT License**.
