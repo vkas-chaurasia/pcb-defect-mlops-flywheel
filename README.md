@@ -10,8 +10,8 @@ The system is designed to be orchestrated entirely **locally** using Docker and 
 2.  **PyTorch Training**: CNN-based defect detection trained in `src/training/`.
 3.  **MLflow Tracking**: All experiments, parameters, and model versions are logged to a local MLflow server.
 4.  **Local Orchestration**: Docker Compose manages MLflow and Label Studio.
-5.  **MLServer (Professional Serving)**: Serves the PyTorch model via a V2-compatible REST API on port **8081**.
-6.  **Streamlit (Frontend)**: User interface that communicates with MLServer for real-time predictions.
+5.  **FastAPI (Custom Serving)**: High-performance inference engine with built-in **PASS/FAIL** logic and Swagger UI on port **8000**.
+6.  **Human-in-the-Loop (HITL)**: All "FAIL" results (defects detected) can be routed to humans for verification.
 7.  **Model Promotion**: The CI/CD pipeline (act) acts as a "Judge," only deploying models that meet accuracy thresholds.
 8.  **Active Learning Loop**: 
     *   **Trigger**: Low-confidence predictions (e.g. < 80%) are automatically flagged.
@@ -30,7 +30,7 @@ The system is designed to be orchestrated entirely **locally** using Docker and 
 ├── src/
 │   ├── data/               # OpenCV preprocessing scripts
 │   ├── training/           # PyTorch training logic
-│   ├── serving/            # MLServer configuration
+│   ├── serving/            # FastAPI (serve.py) logic
 │   ├── app/                # Streamlit UI
 │   └── utils/              # Sync & MLflow helpers
 ├── docker/                 # Docker Compose & Service configs
@@ -53,4 +53,13 @@ The system is designed to be orchestrated entirely **locally** using Docker and 
 3. **Run the Flywheel**:
    ```bash
    dvc repro
+   ```
+
+4. **Promote the Champion**:
+   * Open MLflow UI (`http://localhost:5555`).
+   * Select your best model version and add the alias **`champion`** (or change stage to **`Production`**).
+
+5. **Start Inference API**:
+   ```bash
+   .venv/bin/python src/serving/serve.py
    ```
