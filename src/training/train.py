@@ -159,14 +159,12 @@ def main():
         # Log dataset formally for lineage
         try:
             import subprocess
+            import pandas as pd
             commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
             
-            # Log as a formal dataset using the base Dataset class for maximum compatibility
-            dataset = mlflow.data.dataset.Dataset(
-                source=mlflow.data.dataset_source.DatasetSource(),
-                name="pcb-yolo-dataset",
-                digest=commit_hash[:8]
-            )
+            # Create a tiny metadata dataframe to "force" the UI to show the dataset
+            df = pd.DataFrame([{"path": str(yaml_path), "commit": commit_hash[:8]}])
+            dataset = mlflow.data.from_pandas(df, name="pcb-yolo-dataset", targets="defect_detection")
             mlflow.log_input(dataset, context="training")
             
             mlflow.set_tag("git_commit", commit_hash)
