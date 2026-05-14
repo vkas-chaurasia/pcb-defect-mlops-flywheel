@@ -14,10 +14,10 @@ dvc[s3]
 mlflow
 evidently
 
-# Serving & UI (Coming Soon - Compatibility Check needed for Py 3.13)
-# streamlit
+# Serving & UI
+streamlit
 # mlserver
 # mlserver-pytorch
 
 # Human-in-the-Loop
-# label-studio-sdk
+label-studio-sdk
