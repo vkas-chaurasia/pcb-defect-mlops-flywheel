@@ -223,3 +223,6 @@ dvc-storage/logs/
 
 .dvc/cache/
 .dvc/tmp/
+runs/
+mlruns/
+*.pt

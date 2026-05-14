@@ -1,20 +1,18 @@
 stages:
   preprocess:
-    cmd: python src/data/preprocess.py
+    cmd: python3 src/data/preprocess.py --img-size 224 --raw-dir data/raw --out-dir data/processed
     deps:
       - data/raw
       - src/data/preprocess.py
     outs:
       - data/processed
+      - data/yolo
   
   train:
-    cmd: python src/training/train.py
+    cmd: python3 src/training/train.py --epochs 2 --img-size 224
     deps:
       - data/processed
       - src/training/train.py
-      - src/training/model.py
-      - configs/config.yaml
     outs:
-      - models/model.pth
-    metrics:
-      - mlruns/  # (Optional: MLflow logs as metrics)
+      - mlruns/:
+          remote: logs-storage

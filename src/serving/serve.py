@@ -2,7 +2,7 @@
 PCB Defect Detection – FastAPI Inference Service
 =================================================
 Project : PCB Defect Detection System (Spring 2026)
-Team    : Bhatia Isha, Chaurasia Vikas, Duss Karin, Müller Jonathan
+Team    : PCB Defect Detection MLOps Team
 
 Endpoints
 ---------
@@ -77,7 +77,7 @@ CLASS_NAMES = [
 ]
 
 MAX_BATCH_SIZE  = 16
-DEFAULT_CONF    = 0.25
+DEFAULT_CONF    = 0.10
 DEFAULT_IOU     = 0.45
 DEFAULT_IMG_SIZE= 640
 
@@ -140,11 +140,16 @@ class ModelManager:
         cls._img_size = img_size
         cls._model    = YOLO(weights)
 
-        # detect device
+        # detect device (CUDA for NVIDIA, MPS for Mac, CPU as fallback)
         try:
             import torch
-            cls._device = "cuda" if torch.cuda.is_available() else "cpu"
-        except ImportError:
+            if torch.cuda.is_available():
+                cls._device = "cuda"
+            elif torch.backends.mps.is_available():
+                cls._device = "mps"
+            else:
+                cls._device = "cpu"
+        except (ImportError, AttributeError):
             cls._device = "cpu"
 
         print(f"Model loaded: {weights}  |  device: {cls._device}  |  img_size: {img_size}")
@@ -374,14 +379,48 @@ def main(weights: str = None, host: str = "0.0.0.0", port: int = 8000,
 
     # ── CLI path ──────────────────────────────────────────────────────────
     raw_argv = [a for a in sys.argv[1:] if not a.startswith("-f")]
+    
+    # Smart weights discovery
+    # Smart weights discovery
     if "--weights" not in raw_argv:
-        print("Colab usage : main(weights='/content/.../best.pt')")
-        print("              start_server()   # starts uvicorn in a thread")
-        print("CLI usage   : python serve.py --weights path/to/best.pt")
-        return
+        # 1. Try MLflow first (The Modern Human-Gatekeeper Way)
+        try:
+            import mlflow
+            mlflow.set_tracking_uri("http://localhost:5555")
+            print("Checking MLflow Model Registry for '@champion' alias (Waiting for your Approval)...")
+            # We look for the model with the '@champion' alias
+            weights = mlflow.artifacts.download_artifacts(artifact_uri="models:/pcb-defect-model@champion/weights/best.pt")
+            print(f"✅ Approved! Using your @champion model: {weights}")
+        except Exception as e:
+            print(f"⏳ Waiting for you to add the '@champion' alias in MLflow UI. Falling back to local files...")
+            
+            # 2. Local Fallbacks
+            potential_paths = [
+                "models/pcb-defect-detector/best.pt",
+                "models/best.pt",
+            ]
+            # Also check all YOLO runs
+            potential_paths.extend([str(p) for p in Path("runs/detect").glob("**/weights/best.pt")])
+            
+            # Take the first one that exists
+            for p in potential_paths:
+                if Path(p).exists():
+                    weights = p
+                    print(f"Auto-discovered local weights: {weights}")
+                    break
+        
+        if not weights:
+            print("Error: No weights found in MLflow or locally.")
+            return
+    else:
+        # Get weights from argv if provided
+        parser_temp = argparse.ArgumentParser(add_help=False)
+        parser_temp.add_argument("--weights")
+        args_temp, _ = parser_temp.parse_known_args()
+        weights = args_temp.weights
 
     parser = argparse.ArgumentParser(description="PCB Defect Detection Inference API")
-    parser.add_argument("--weights",  required=True)
+    parser.add_argument("--weights",  default=weights)
     parser.add_argument("--host",     default="0.0.0.0")
     parser.add_argument("--port",     type=int, default=8000)
     parser.add_argument("--img-size", type=int, default=DEFAULT_IMG_SIZE)

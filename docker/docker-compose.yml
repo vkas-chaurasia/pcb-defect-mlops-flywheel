@@ -6,10 +6,11 @@ services:
     image: ghcr.io/mlflow/mlflow:latest
     container_name: mlflow
     ports:
-      - "5000:5000"
+      - "5555:5000"
+    working_dir: /mlflow
     volumes:
       - ../mlruns:/mlflow/mlruns
-    command: mlflow server --host 0.0.0.0
+    command: mlflow server --host 0.0.0.0 --backend-store-uri sqlite:///mlflow/mlruns/mlflow.db --serve-artifacts --artifacts-destination /mlflow/mlruns --default-artifact-root mlflow-artifacts:/
 
   # Human-in-the-Loop Labeling
   label-studio:
