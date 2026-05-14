@@ -137,6 +137,8 @@ def main():
         # Log training metrics
         metrics = results.results_dict
         mlflow.log_metrics({k.replace("(", "_").replace(")", ""): v for k, v in metrics.items()})
+        
+        print("Final training metrics logged.")
 
         # Log the formal PyTorch model (enables "Register Model" button)
         best_pt = Path(f"runs/detect/pcb-defect-detection/{run_name}/weights/best.pt")
@@ -152,25 +154,7 @@ def main():
                 artifact_path="pcb-yolo-model"
             )
 
-            # Also log the raw .pt file directly to the root for easy manual download
-            print("Logging raw best.pt weights...")
-            mlflow.log_artifact(str(best_pt))
-
-        # Log dataset formally for lineage
-        try:
-            import subprocess
-            import pandas as pd
-            commit_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
-            
-            # Create a tiny metadata dataframe to "force" the UI to show the dataset
-            df = pd.DataFrame([{"path": str(yaml_path), "commit": commit_hash[:8]}])
-            dataset = mlflow.data.from_pandas(df, name="pcb-yolo-dataset", targets="defect_detection")
-            mlflow.log_input(dataset, context="training")
-            
-            mlflow.set_tag("git_commit", commit_hash)
-            print(f"Formal dataset lineage logged (Commit: {commit_hash[:8]})")
-        except Exception as e:
-            print(f"Note: Could not log formal dataset lineage: {e}")
+            print("Formal PyTorch model flavour logged.")
 
         # Log dataset profile (mean/std)
         stats_path = PROCESSED_DIR / "dataset_stats.json"

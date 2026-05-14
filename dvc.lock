@@ -19,6 +19,11 @@ stages:
       md5: 0b70b6afb12e8c29f81bfe586b220e28.dir
       size: 22480035
       nfiles: 4
+    - path: data/yolo
+      hash: md5
+      md5: 65bee0fb123aa4bf4dea0b5e0b18190b.dir
+      size: 23564427
+      nfiles: 2993
   train:
     cmd: python3 src/training/train.py --epochs 2 --img-size 224
     deps:

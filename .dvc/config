@@ -1,6 +1,6 @@
 [core]
     no_scm = True
-    remote = pcb-vault
+    remote = storage
 ['remote "localremote"']
     url = ../dvc-storage
 ['remote "pcb-vault"']
@@ -14,6 +14,21 @@
     access_key_id = rustfsadmin
     secret_access_key = rustfsadmin
 ['remote "pcb-production"']
+    url = s3://pcb-production-models
+    endpointurl = http://localhost:9000
+    access_key_id = rustfsadmin
+    secret_access_key = rustfsadmin
+['remote "storage"']
+    url = s3://pcb-defect-data
+    endpointurl = http://localhost:9000
+    access_key_id = rustfsadmin
+    secret_access_key = rustfsadmin
+['remote "logs-storage"']
+    url = s3://pcb-experiment-logs
+    endpointurl = http://localhost:9000
+    access_key_id = rustfsadmin
+    secret_access_key = rustfsadmin
+['remote "models-storage"']
     url = s3://pcb-production-models
     endpointurl = http://localhost:9000
     access_key_id = rustfsadmin
