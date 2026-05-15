@@ -54,56 +54,29 @@ jobs:
         AWS_SECRET_ACCESS_KEY: rustfsadmin
       run: dvc pull data/raw.dvc -f
 
-    - name: Reproduce Pipeline
+    - name: Execute Total Trust Pipeline and Post Report
       env:
+        REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         MLFLOW_TRACKING_URI: http://localhost:5556
         MLFLOW_S3_ENDPOINT_URL: http://localhost:9000
         AWS_ACCESS_KEY_ID: rustfsadmin
         AWS_SECRET_ACCESS_KEY: rustfsadmin
         MLFLOW_EXPERIMENT_NAME: pcb-defect-production
       run: |
+        # 1. Force a fresh, system-verified training run
         echo "📡 MLflow Tracking URI: $MLFLOW_TRACKING_URI"
-        echo "📦 S3 Endpoint: $MLFLOW_S3_ENDPOINT_URL"
         dvc repro -f train
-        dvc repro report
-        dvc push
-
-    - name: Generate Metrics Report and Post to GitHub PR
-      env:
-        REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        echo "## MLOps Flywheel: Training Report" > report.md
-        echo "The automated training run has completed successfully. Below is a detailed performance breakdown." >> report.md
         
-        # Performance Diff
+        # 2. Execute the API-driven Auditor (Creates report.md)
+        dvc repro report
+        
+        # 3. Append Performance Comparison
         git fetch origin main:main
-        echo "### Metrics vs Main" >> report.md
+        echo -e "\n## Performance vs Main\n" >> report.md
         dvc metrics diff --md --all main >> report.md
         
-        # Deep Links to the Official Validation Run
-        if [ -f mlflow_run_official.txt ]; then
-          source mlflow_run_official.txt
-          echo "---" >> report.md
-          echo "* [View Official Validation Run]($RUN_URL)" >> report.md
-          echo "* [View Full Experiment Suite]($EXP_URL)" >> report.md
-          echo "---" >> report.md
-        fi
+        # 4. Push official results to the vault
+        dvc push
         
-        # Visual Artifacts
-        if [ -f mlflow_run_official.txt ]; then
-          source mlflow_run_official.txt
-          echo "### Visual Analysis" >> report.md
-          
-          echo "#### Training Loss and Metrics Curves" >> report.md
-          cml publish "$RUN_PATH/results.png" --md >> report.md
-          
-          echo "#### F1 and Precision-Recall Curves" >> report.md
-          cml publish "$RUN_PATH/BoxF1_curve.png" --md >> report.md
-          cml publish "$RUN_PATH/BoxPR_curve.png" --md >> report.md
-          
-          echo "#### Confusion Matrix" >> report.md
-          cml publish "$RUN_PATH/confusion_matrix.png" --md >> report.md
-        fi
-        
-        # Update existing comment or create new one with watermark to prevent duplicates
+        # 5. Post the Unified High-Fidelity Report
         cml comment create --watermark-title="mlops-report" report.md

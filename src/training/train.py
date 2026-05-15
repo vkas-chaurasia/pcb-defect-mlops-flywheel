@@ -141,7 +141,7 @@ def main():
     with mlflow.start_run() as run:
         run_id = run.info.run_id
         run_name = run.info.run_name
-        print(f"🚀 Industry Mode Active | Experiment: {exp_name} | Run: {run_name}")
+        print(f"Industry Mode Active | Experiment: {exp_name} | Run: {run_name}")
         
         # Sign the run with the unique GitHub Job ID for foolproof traceability
         github_run_id = os.getenv("GITHUB_RUN_ID", "local")
@@ -167,7 +167,7 @@ def main():
         with open("metrics.json", "w") as f:
             json.dump(clean_metrics, f, indent=4)
 
-    print(f"\n✅ Training Complete. View in MLflow.")
+    print(f"\nTraining Complete. View in MLflow.")
 
 if __name__ == "__main__":
     main()

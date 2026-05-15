@@ -17,7 +17,7 @@ def find_latest_run_folder(base_path):
     return subdirs[0]
 
 def generate_report():
-    print(f"📡 API Auditor Active. Searching Experiment: {EXP_NAME}...")
+    print(f"API Auditor Active. Searching Experiment: {EXP_NAME}...")
     
     # 1. Connect to MLflow API
     mlflow.set_tracking_uri(MLFLOW_URI)
@@ -37,12 +37,12 @@ def generate_report():
     )
     
     if runs.empty:
-        print(f"Error: No run found with tag github_run_id='{github_run_id}' in {EXP_NAME}. Did training fail?")
+        print(f"Error: No run found with tag github_run_id='{github_run_id}' in {EXP_NAME}.")
         return
         
     latest_run_data = runs.iloc[0]
     run_id = latest_run_data.run_id
-    print(f"🎯 DNA Match Found! Official Run: {run_id}")
+    print(f"DNA Match Found! Official Run: {run_id}")
 
     # 3. Find the local artifact path for PR visualization
     base_run_path = "runs/detect/pcb-defect-detection"
@@ -51,18 +51,32 @@ def generate_report():
         print(f"Error: No artifacts found in {base_run_path}")
         return
 
-    # 4. Export the Metadata for GitHub Actions (This file is ONLY for CML, not tracked by DVC)
+    # 4. Generate the Unified Markdown Report (report.md)
+    # This file is consumed directly by CML
     run_url = f"{MLFLOW_URI}/#/experiments/{exp.experiment_id}/runs/{run_id}"
     exp_url = f"{MLFLOW_URI}/#/experiments/{exp.experiment_id}"
     
-    with open("mlflow_run_official.txt", "w") as f:
-        f.write(f"RUN_ID={run_id}\n")
-        f.write(f"EXP_ID={exp.experiment_id}\n")
-        f.write(f"RUN_URL={run_url}\n")
-        f.write(f"EXP_URL={exp_url}\n")
-        f.write(f"RUN_PATH={latest_folder}\n")
+    report_content = [
+        "# MLOps Flywheel: Official Validation Report",
+        "\nAn automated, system-verified training run has completed successfully.",
+        "\n## Official Record",
+        f"* **Experiment**: [View All Runs]({exp_url})",
+        f"* **Validation Run**: [View Detailed Metrics & Weights]({run_url})",
+        f"* **System Job ID**: `{github_run_id}`",
+        "\n## Visual Evidence",
+        f"![Results]({latest_folder}/results.png)",
+        "\n## Model Performance Summary",
+        "| Class | Images | Instances | Box(P) | R | mAP50 | mAP50-95 |",
+        "|-------|--------|-----------|--------|---|-------|----------|"
+    ]
+    
+    # Optionally add rows from metrics.json if needed, but YOLO results.png is usually better
+    # For now, we'll keep it focused on the High-Fidelity evidence.
+    
+    with open("report.md", "w") as f:
+        f.write("\n".join(report_content))
 
-    print(f"Success. Metadata prepared for GitHub PR: {run_url}")
+    print(f"Success. Unified Report generated: report.md")
 
 if __name__ == "__main__":
     generate_report()
