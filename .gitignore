@@ -218,8 +218,6 @@ __marimo__/
 .streamlit/secrets.toml
 
 # DVC Portable Storage (Track buckets, ignore system files)
-dvc-storage/.rustfs.sys/
-dvc-storage/logs/
 
 .dvc/cache/
 .dvc/tmp/
@@ -233,3 +231,4 @@ data/processed
 data/yolo
 models
 mlruns
+dvc/tests/
