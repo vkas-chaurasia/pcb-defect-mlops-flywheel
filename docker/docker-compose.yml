@@ -1,5 +1,5 @@
 services:
-  # Unified Enterprise MLflow Instance
+  # Unified MLflow Instance
   mlflow:
     image: ghcr.io/mlflow/mlflow:latest
     container_name: mlflow
