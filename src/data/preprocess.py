@@ -83,9 +83,11 @@ def collect_samples(raw_dir: Path):
     Designed to work with both the initial DeepPCB structure and Active Learning folders.
     """
     samples = []
-    # Search for all images in the raw directory
+    # Search for all images in the raw directory (Flywheel Mode)
     for img_path in sorted(raw_dir.rglob("*.jpg")):
-        if "temp" in img_path.parts: continue  # Skip template images
+        # Skip template images and the protected "unseen_simulation" set
+        if "temp" in img_path.parts: continue 
+        if "unseen_simulation" in img_path.parts: continue
         
         # Determine annotation path (DeepPCB pattern: image_folder + "_not" / stem.txt)
         stem = img_path.stem
