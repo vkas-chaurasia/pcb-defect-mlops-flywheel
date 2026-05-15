@@ -25,6 +25,6 @@ stages:
       - metrics.json
       - src/training/report.py
     outs:
-      - mlflow_run_official.txt:
+      - report.md:
           cache: false
     always_changed: true
