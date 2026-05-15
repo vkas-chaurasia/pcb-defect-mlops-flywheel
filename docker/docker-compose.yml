@@ -1,8 +1,8 @@
 services:
-  # Smart Unified MLflow Instance
-  mlflow:
+  # Production MLflow (Shared / CI/CD)
+  mlflow_prod:
     image: ghcr.io/mlflow/mlflow:latest
-    container_name: mlflow
+    container_name: mlflow_prod
     ports:
       - "5555:5000"
     working_dir: /mlflow
@@ -12,8 +12,23 @@ services:
       - MLFLOW_S3_ENDPOINT_URL=http://rustfs:9000
       - MLFLOW_S3_IGNORE_TLS=true
     volumes:
-      # Defaults to prod history, but can be overridden locally via .env
-      - ${MLFLOW_HISTORY_PATH:-../mlflow-history-prod}:/mlflow/data
+      - ../mlflow-history-prod:/mlflow/data
+    command: mlflow server --host 0.0.0.0 --backend-store-uri /mlflow/data --default-artifact-root mlflow-artifacts:/ --serve-artifacts
+
+  # Development MLflow (Local Private Exploration)
+  mlflow_dev:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: mlflow_dev
+    ports:
+      - "5556:5000"
+    working_dir: /mlflow
+    environment:
+      - AWS_ACCESS_KEY_ID=rustfsadmin
+      - AWS_SECRET_ACCESS_KEY=rustfsadmin
+      - MLFLOW_S3_ENDPOINT_URL=http://rustfs:9000
+      - MLFLOW_S3_IGNORE_TLS=true
+    volumes:
+      - ../local-mlflow-history:/mlflow/data
     command: mlflow server --host 0.0.0.0 --backend-store-uri /mlflow/data --default-artifact-root mlflow-artifacts:/ --serve-artifacts
 
   # Human-in-the-Loop Labeling

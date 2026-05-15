@@ -47,9 +47,9 @@ jobs:
     - name: Clean and Start Infrastructure
       run: |
         docker compose -f docker/docker-compose.yml down -v || true
-        mkdir -p mlflow-history-prod
-        chmod -R 777 mlflow-history-prod
-        docker compose -f docker/docker-compose.yml up -d
+        mkdir -p mlflow-history-prod local-mlflow-history
+        chmod -R 777 mlflow-history-prod local-mlflow-history
+        docker compose -f docker/docker-compose.yml up -d mlflow_prod rustfs
         echo "Waiting for MLflow API and RustFS to be ready..."
         for i in {1..30}; do
           if curl -s http://localhost:5555/api/2.0/mlflow/experiments/list > /dev/null && curl -s http://localhost:9000/minio/health/live > /dev/null; then
@@ -60,7 +60,7 @@ jobs:
           sleep 5
         done
         echo "Infrastructure timed out. Docker logs:"
-        docker logs mlflow
+        docker logs mlflow_prod
         exit 1
 
     - name: Pull Data from DVC

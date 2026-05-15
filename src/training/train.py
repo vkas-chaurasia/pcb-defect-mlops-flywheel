@@ -21,8 +21,11 @@ CLASS_NAMES   = ["open", "short", "mousebite", "spur", "spurious_copper", "pin_h
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 YOLO_DIR      = PROJECT_ROOT / "data" / "yolo"
 RUNS_DIR      = PROJECT_ROOT / "runs" / "detect"
-# Detect environment: Always use port 5555 for MLflow
-DEFAULT_MLFLOW_URI = "http://localhost:5555"
+# Detect environment: Use Prod (5555) in CI/CD, Dev (5556) for local exploration
+if os.getenv("GITHUB_ACTIONS") == "true":
+    DEFAULT_MLFLOW_URI = "http://localhost:5555"
+else:
+    DEFAULT_MLFLOW_URI = "http://localhost:5556"
 
 MLFLOW_URI = os.getenv("MLFLOW_TRACKING_URI", DEFAULT_MLFLOW_URI)
 
