@@ -187,7 +187,7 @@ def main():
                 f.write(f"EXP_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}\n")
 
         # Ensure DVC sees the history folder exists (to avoid errors)
-        os.makedirs(PROJECT_ROOT / "dvc-storage" / "mlflow-history", exist_ok=True)
+        os.makedirs(PROJECT_ROOT / "mlflow-history-prod", exist_ok=True)
 
     print(f"\nTraining and Logging Complete. Run ID: {run_id}")
 
