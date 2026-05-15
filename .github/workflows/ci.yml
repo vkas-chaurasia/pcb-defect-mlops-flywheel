@@ -61,6 +61,8 @@ jobs:
         AWS_ACCESS_KEY_ID: rustfsadmin
         AWS_SECRET_ACCESS_KEY: rustfsadmin
       run: |
+        echo "📡 MLflow Tracking URI: $MLFLOW_TRACKING_URI"
+        echo "📦 S3 Endpoint: $MLFLOW_S3_ENDPOINT_URL"
         dvc repro
         dvc push
 
