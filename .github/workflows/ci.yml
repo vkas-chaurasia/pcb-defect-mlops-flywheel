@@ -76,7 +76,7 @@ jobs:
         # Performance Diff
         git fetch origin main:main
         echo "### 📈 Metrics vs Main" >> report.md
-        dvc metrics diff --md main >> report.md
+        dvc metrics diff --md --all main >> report.md
         
         # Visual Artifacts
         if [ -f last_run_path.txt ]; then
