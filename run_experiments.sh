@@ -1,13 +1,16 @@
 #!/bin/bash
 source .venv/bin/activate
 
-echo "🚀 Starting Experiment 1: Fast Baseline (2 epochs)"
-python3 src/training/train.py --epochs 2 --model yolov8n
+echo "Queueing Experiment 1: Fast Baseline (2 epochs)"
+dvc exp run --queue -n exp1_baseline -S train.epochs=2
 
-echo "🚀 Starting Experiment 2: Fast Precision (3 epochs)"
-python3 src/training/train.py --epochs 3 --batch 8 --model yolov8n
+echo "Queueing Experiment 2: Fast Precision (3 epochs, batch 8)"
+dvc exp run --queue -n exp2_precision -S train.epochs=3 -S train.batch=8
 
-echo "🚀 Starting Experiment 3: Fast Champion (5 epochs)"
-python3 src/training/train.py --epochs 5 --model yolov8n
+echo "Queueing Experiment 3: Fast Champion (5 epochs)"
+dvc exp run --queue -n exp3_champion -S train.epochs=5
 
-echo "✅ All 3 experiments complete! Check them at http://localhost:5454"
+echo "Running all queued experiments in sequence..."
+dvc exp run --run-all
+
+echo "All experiments complete! Use 'dvc exp show' to see the results table."
