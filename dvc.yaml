@@ -14,8 +14,6 @@ stages:
       - src/training/train.py
     outs:
       - data/yolo
-      - mlruns/:
-          remote: logs-storage
     metrics:
       - metrics.json:
           cache: false

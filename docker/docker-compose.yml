@@ -14,8 +14,8 @@ services:
       - MLFLOW_S3_ENDPOINT_URL=http://rustfs:9000
       - MLFLOW_S3_IGNORE_TLS=true
     volumes:
-      - ../mlruns:/mlflow/mlruns
-    command: mlflow server --host 0.0.0.0 --backend-store-uri sqlite:///mlflow/mlruns/mlflow.db --default-artifact-root s3://pcb-experiment-logs --serve-artifacts
+      - mlflow_data:/mlflow/data
+    command: mlflow server --host 0.0.0.0 --backend-store-uri sqlite:///mlflow/data/mlflow.db --default-artifact-root s3://pcb-experiment-logs --serve-artifacts
 
   # Human-in-the-Loop Labeling
   label-studio:
@@ -68,3 +68,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+volumes:
+  mlflow_data:
