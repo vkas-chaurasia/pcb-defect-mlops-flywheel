@@ -82,8 +82,8 @@ jobs:
         if [ -f mlflow_run.txt ]; then
           source mlflow_run.txt
           echo "---" >> report.md
-          echo "View Original Training Run: $RUN_URL" >> report.md
-          echo "View Full Experiment Suite: $EXP_URL" >> report.md
+          echo "* [View Original Training Run]($RUN_URL)" >> report.md
+          echo "* [View Full Experiment Suite]($EXP_URL)" >> report.md
           echo "---" >> report.md
         fi
         
