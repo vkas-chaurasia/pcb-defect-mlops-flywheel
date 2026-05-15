@@ -142,7 +142,10 @@ def main():
         run_id = run.info.run_id
         run_name = run.info.run_name
         print(f"🚀 Industry Mode Active | Experiment: {exp_name} | Run: {run_name}")
-
+        
+        # Sign the run with the unique GitHub Job ID for foolproof traceability
+        github_run_id = os.getenv("GITHUB_RUN_ID", "local")
+        mlflow.set_tag("github_run_id", github_run_id)
         results = model.train(
             data=str(yaml_path),
             epochs=args.epochs,
@@ -164,17 +167,7 @@ def main():
         with open("metrics.json", "w") as f:
             json.dump(clean_metrics, f, indent=4)
 
-        # Export metadata for CI/CD reporting
-        with open("mlflow_run.txt", "w") as f:
-            f.write(f"RUN_ID={run_id}\n")
-            f.write(f"EXP_ID={exp.experiment_id}\n")
-            f.write(f"RUN_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}/runs/{run_id}\n")
-            f.write(f"EXP_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}\n")
-
     print(f"\n✅ Training Complete. View in MLflow.")
-
-if __name__ == "__main__":
-    main()
 
 if __name__ == "__main__":
     main()
