@@ -238,3 +238,4 @@ local-mlflow-history/**/*
 /local-mlflow-history
 /runs
 /mlflow_run.txt
+/dvc-storage
