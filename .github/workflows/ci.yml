@@ -69,9 +69,6 @@ jobs:
     - name: Generate Metrics Report and Post to GitHub PR
       env:
         REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Generate Metrics Report and Post to GitHub PR
-      env:
-        REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         echo "## MLOps Flywheel: Training Report" >> report.md
         echo "The automated training run has completed successfully. Below is a detailed performance breakdown." >> report.md
