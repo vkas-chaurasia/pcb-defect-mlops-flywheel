@@ -30,9 +30,14 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Setup Safe CI Environment (macOS)
+      run: |
+        python3 -m venv .venv_ci_tools
+        .venv_ci_tools/bin/pip install setuptools
+        echo "$(pwd)/.venv_ci_tools/bin" >> $GITHUB_PATH
+
     - name: Install System Dependencies (macOS)
       run: |
-        pip3 install setuptools --break-system-packages
         brew install pkg-config cairo pango libffi
 
     - name: Setup CML
