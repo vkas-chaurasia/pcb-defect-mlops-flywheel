@@ -1,19 +1,19 @@
 # PCB Defect Detection – MLOps Pipeline
 
-This repository contains an MLOps pipeline for automated PCB defect detection. It implements a complete loop where a YOLOv8 model identifies defects and routes ambiguous cases to Label Studio for verification and retraining data collection.
+This repository contains our MLOps pipeline for automated PCB defect detection. We have implemented a complete loop where our YOLOv8 model identifies defects and routes ambiguous cases to Label Studio for verification and retraining data collection.
 
 ---
 
 ## Quick Start (Team Setup)
 
-Follow these steps to get the entire pipeline running locally on your machine.
+We follow these steps to get the entire pipeline running locally.
 
 ### 1. Environment Setup
 ```bash
 # Clone the repository and enter the directory
-git checkout feature/automated-pipeline
+cd pcb-defect-mlops-flywheel
 
-# Create your local environment bridge
+# Create our local environment bridge
 cp .env.example .env
 
 # Install dependencies (recommended in a virtual environment)
@@ -29,14 +29,15 @@ docker compose -f docker/docker-compose.yml up -d
 ```
 *   **Label Studio**: http://localhost:8080
 *   **Credentials**: admin@example.com / mlops123
-*   **Automated Project**: A pre-configured project named "PCB Defect Detection" is automatically created with the correct defect labels (open, short, mousebite, spur, spurious_copper, pin_hole).
+*   **Automated Project**: We have pre-configured a project named "PCB Defect Detection" with the correct defect labels (open, short, mousebite, spur, spurious_copper, pin_hole).
 
 ### 3. Start the Pipeline Services
-Open two terminal tabs (with your virtual environment active):
+We open two terminal tabs (with our virtual environment active):
 
-**Tab 1: Inference Server**
+**Tab 1: Inference Server (Fetching from Registry)**
 ```bash
-python src/serving/serve.py --weights runs/detect/pcb-defect-detection/indecisive-hare-189/weights/best.pt
+# We pull and run the latest champion model from our MLflow registry
+python src/serving/serve.py --weights models:/pcb-defect-model@champion
 ```
 
 **Tab 2: Streamlit Dashboard**
@@ -49,27 +50,27 @@ streamlit run src/app/main.py
 ## The Pipeline Loop (Demo Workflow)
 
 ### Step 1: Detection
-Open the Streamlit Dashboard at http://localhost:8501. Upload images or use the simulation directory. The model will predict defects in real-time.
+We open our Streamlit Dashboard at http://localhost:8501. We can upload images or use the simulation directory to see the model predict defects in real-time.
 
 ### Step 2: Trigger the Loop
-Click the "Trigger Loop" button. This script (batch_inference.py) will:
-1.  Run the model on the unseen_simulation dataset.
+We click the "Trigger Loop" button. This script (batch_inference.py) will:
+1.  Run our model on the unseen_simulation dataset.
 2.  Route all detections and low-confidence images to Label Studio.
-3.  Apply Pre-Annotations: The script sends the model's boxes so labels do not need to be created from scratch.
+3.  Apply Pre-Annotations: We send the model's boxes automatically so we do not have to label from scratch.
 
 ### Step 3: Human-in-the-loop (Label Studio)
-1.  Log in to Label Studio at http://localhost:8080.
-2.  Open the PCB Defect Detection project.
-3.  Review the pre-annotated boxes. Correct any mistakes or add missing detections.
-4.  Click Submit.
+1.  We log in to Label Studio at http://localhost:8080.
+2.  We open our PCB Defect Detection project.
+3.  We review the pre-annotated boxes, correcting any mistakes or adding missing detections.
+4.  We click Submit.
 
 ### Step 4: Syncing New Data
-Once labels have been submitted, run the sync script to pull them back into the project:
+Once we have submitted our labels, we run the sync script to pull them back into our training set:
 ```bash
 python src/utils/sync_labels.py
 ```
-*   **Output**: New YOLO-formatted data (Images + .txt labels) will appear in data/raw/active_learning/.
-*   **DVC**: These files are now ready to be versioned via `dvc add`.
+*   **Output**: Our new YOLO-formatted data (Images + .txt labels) appears in data/raw/active_learning/.
+*   **DVC**: We then use `dvc add` to version these new files.
 
 ---
 
@@ -84,5 +85,32 @@ python src/utils/sync_labels.py
 ---
 
 ## Team Collaboration
-*   **Shared Credentials**: All API tokens and login credentials are standardized via .env.example.
-*   **Infrastructure**: The docker-compose configuration ensures that all team members are running identical versions of the environment.
+*   **Shared Credentials**: We standardize all API tokens and login credentials via .env.example.
+*   **Infrastructure**: Our docker-compose configuration ensures that all team members are running identical versions of the environment.
+
+---
+
+## Experiment Tracking & CI/CD Validation
+
+We use DVC to separate local model exploration from automated pipeline validation.
+
+### 1. Local Exploration
+We use `dvc exp run` to test multiple hyperparameters locally without writing custom bash scripts.
+```bash
+# Example: Queueing multiple variations
+dvc exp run --queue -n exp1 -S train.epochs=2
+dvc exp run --queue -n exp2 -S train.epochs=3 -S train.batch=8
+dvc exp run --run-all
+```
+Once we identify the best performing experiment, we apply it to our workspace:
+```bash
+dvc exp apply <experiment_name>
+```
+This updates our `params.yaml` and `dvc.lock` files with the winning configuration. We then commit these files to Git.
+
+### 2. CI/CD Validation
+Our automated CI/CD pipelines (e.g., GitHub Actions) do *not* run multiple experiments. Instead, they use:
+```bash
+dvc repro
+```
+By reading the committed `params.yaml` and `dvc.lock`, the CI/CD pipeline runs only the single, approved configuration to validate the build and verify metrics before code is merged.
