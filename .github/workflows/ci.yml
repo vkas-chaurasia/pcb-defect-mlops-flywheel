@@ -44,8 +44,21 @@ jobs:
         pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Ensure Infrastructure is Running
-      run: docker compose -f docker/docker-compose.yml up -d
+    - name: Clean and Start Infrastructure
+      run: |
+        docker compose -f docker/docker-compose.yml down -v || true
+        mkdir -p mlflow-history-prod local-mlflow-history
+        chmod -R 777 mlflow-history-prod local-mlflow-history
+        docker compose -f docker/docker-compose.yml up -d
+        echo "⏳ Waiting for MLflow and RustFS to be healthy..."
+        for i in {1..20}; do
+          if curl -s http://localhost:5555/health > /dev/null && curl -s http://localhost:9000/minio/health/live > /dev/null; then
+            echo "✅ Infrastructure is healthy!"
+            exit 0
+          fi
+          sleep 5
+        done
+        exit 1
 
     - name: Pull Data from DVC
       env:
