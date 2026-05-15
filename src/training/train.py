@@ -22,10 +22,7 @@ PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 YOLO_DIR      = PROJECT_ROOT / "data" / "yolo"
 RUNS_DIR      = PROJECT_ROOT / "runs" / "detect"
 # Detect environment: Use Prod (5555) in CI/CD, Local (5556) for exploration
-if os.getenv("GITHUB_ACTIONS") == "true":
-    DEFAULT_MLFLOW_URI = "http://localhost:5555"
-else:
-    DEFAULT_MLFLOW_URI = "http://localhost:5556"
+DEFAULT_MLFLOW_URI = "http://localhost:5555"
 
 MLFLOW_URI = os.getenv("MLFLOW_TRACKING_URI", DEFAULT_MLFLOW_URI)
 
@@ -75,7 +72,7 @@ def prepare_yolo_data(processed_dir: Path, yolo_dir: Path, img_size: int):
                 lines.append(f"{int(cls)} {cx:.6f} {cy:.6f} {bw:.6f} {bh:.6f}")
             (lbl_out / f"{split}_{i:06d}.txt").write_text("\n".join(lines))
 
-    print("✅ YOLO dataset images and labels prepared.")
+    print("YOLO dataset images and labels prepared.")
     dataset_cfg = {"path": str(yolo_dir), "train": "images/train", "val": "images/val", "test": "images/test", "nc": len(CLASS_NAMES), "names": CLASS_NAMES}
     with open(yaml_path, "w") as f:
         yaml.dump(dataset_cfg, f)
@@ -97,10 +94,10 @@ def main():
     yaml_path = prepare_yolo_data(PROCESSED_DIR, YOLO_DIR, args.img_size)
 
     # MLflow Setup
-    print(f"🔗 Connecting to MLflow at {MLFLOW_URI}...")
+    print(f"Connecting to MLflow at {MLFLOW_URI}...")
     mlflow.set_tracking_uri(MLFLOW_URI)
     mlflow.set_experiment("pcb-defect-detection")
-    print("✅ Connected to MLflow Experiment: pcb-defect-detection")
+    print("Connected to MLflow Experiment: pcb-defect-detection")
     exp = mlflow.get_experiment_by_name("pcb-defect-detection")
 
     # Disable YOLO's internal MLflow callback to prevent duplicate runs
@@ -189,8 +186,8 @@ def main():
                 f.write(f"RUN_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}/runs/{run_id}\n")
                 f.write(f"EXP_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}\n")
 
-        # Ensure DVC sees the production history folder exists (to avoid errors)
-        os.makedirs(PROJECT_ROOT / "mlflow-history-prod", exist_ok=True)
+        # Ensure DVC sees the history folder exists (to avoid errors)
+        os.makedirs(PROJECT_ROOT / "mlflow-history", exist_ok=True)
 
     print(f"\nTraining and Logging Complete. Run ID: {run_id}")
 

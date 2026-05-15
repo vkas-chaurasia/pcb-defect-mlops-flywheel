@@ -47,21 +47,21 @@ jobs:
     - name: Clean and Start Infrastructure
       run: |
         docker compose -f docker/docker-compose.yml down -v || true
-        mkdir -p mlflow-history-prod local-mlflow-history
-        chmod -R 777 mlflow-history-prod local-mlflow-history
-        docker compose -f docker/docker-compose.yml up -d mlflow_prod rustfs
-        echo "⏳ Waiting for MLflow API and RustFS to be ready..."
+        mkdir -p mlflow-history
+        chmod -R 777 mlflow-history
+        docker compose -f docker/docker-compose.yml up -d
+        echo "Waiting for MLflow API and RustFS to be ready..."
         for i in {1..30}; do
           # Check MLflow API and MinIO health
           if curl -s http://localhost:5555/api/2.0/mlflow/experiments/list > /dev/null && curl -s http://localhost:9000/minio/health/live > /dev/null; then
-            echo "✅ Infrastructure is fully ready!"
+            echo "Infrastructure is fully ready!"
             exit 0
           fi
           echo "...still waiting for services..."
           sleep 5
         done
-        echo "❌ Infrastructure timed out. Docker logs:"
-        docker logs mlflow_prod
+        echo "Infrastructure timed out. Docker logs:"
+        docker logs mlflow
         exit 1
 
     - name: Pull Data from DVC
@@ -78,8 +78,8 @@ jobs:
         AWS_ACCESS_KEY_ID: rustfsadmin
         AWS_SECRET_ACCESS_KEY: rustfsadmin
       run: |
-        echo "📡 MLflow Tracking URI: $MLFLOW_TRACKING_URI"
-        echo "📦 S3 Endpoint: $MLFLOW_S3_ENDPOINT_URL"
+        echo "MLflow Tracking URI: $MLFLOW_TRACKING_URI"
+        echo "S3 Endpoint: $MLFLOW_S3_ENDPOINT_URL"
         rm -f dvc.lock .dvc/tmp/lock || true
         dvc repro
         dvc push
