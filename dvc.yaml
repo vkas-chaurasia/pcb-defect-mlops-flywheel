@@ -9,7 +9,7 @@ stages:
       - data/yolo
   
   train:
-    cmd: python3 src/training/train.py --epochs 2 --img-size 224
+    cmd: python3 src/training/train.py --epochs ${train.epochs} --img-size ${train.img_size} --batch ${train.batch}
     deps:
       - data/processed
       - src/training/train.py
