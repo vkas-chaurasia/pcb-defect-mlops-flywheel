@@ -13,10 +13,14 @@ jobs:
     steps:
     - name: Cleanup Locked Docker Folders
       run: |
-        # Use a tiny Docker container to delete root-owned folders that the runner can't touch
+        # Stop any containers that might be locking the folders
+        docker stop label-studio mlflow rustfs || true
+        docker rm label-studio mlflow rustfs || true
+
+        # Use a tiny Docker container to delete root-owned folders
         for folder in label_studio_data mlruns dvc-storage rustfs_logs; do
           if [ -d "$folder" ]; then
-            echo "Cleaning up $folder..."
+            echo "Force cleaning $folder..."
             docker run --rm -v $(pwd):/workspace alpine rm -rf "/workspace/$folder"
           fi
         done
