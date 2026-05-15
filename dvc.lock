@@ -29,8 +29,8 @@ stages:
       nfiles: 4
     - path: src/training/train.py
       hash: md5
-      md5: f533d3720d3b1313855e3b0729d6af51
-      size: 7209
+      md5: 1a4eb0e446ed4951e25160d561108bd8
+      size: 7381
     outs:
     - path: data/yolo
       hash: md5
@@ -48,10 +48,10 @@ stages:
       nfiles: 0
     - path: mlflow_run.txt
       hash: md5
-      md5: 8436cb007febd0ac35235ab5632d7d88
-      size: 230
+      md5: fd6e4f8ae4e6eeb372d1cd3a8fe280c6
+      size: 179
     - path: runs
       hash: md5
-      md5: 112551ab34a8a6649d8e20a7aa870cfc.dir
-      size: 15227061
+      md5: 43f4f3f4af42074f424c3b2ef9bd8794.dir
+      size: 15227065
       nfiles: 21

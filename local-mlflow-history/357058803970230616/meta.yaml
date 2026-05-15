@@ -1,0 +1,8 @@
+artifact_location: mlflow-artifacts:/357058803970230616
+creation_time: 1778882195551
+experiment_id: '357058803970230616'
+last_update_time: 1778882195551
+lifecycle_stage: active
+name: pcb-defect-detection
+trace_location: null
+workspace: default

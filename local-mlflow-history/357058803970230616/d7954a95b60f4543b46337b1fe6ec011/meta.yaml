@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/357058803970230616/d7954a95b60f4543b46337b1fe6ec011/artifacts
+end_time: 1778882234990
+entry_point_name: ''
+experiment_id: '357058803970230616'
+lifecycle_stage: active
+run_id: d7954a95b60f4543b46337b1fe6ec011
+run_name: likeable-cod-142
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1778882196502
+status: 3
+tags: []
+user_id: vikas

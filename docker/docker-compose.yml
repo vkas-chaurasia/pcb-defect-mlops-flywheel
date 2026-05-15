@@ -1,9 +1,8 @@
 services:
-  # Experiment Tracking
-  # Experiment Tracking (Shared / CI/CD)
-  mlflow_prod:
+  # Single MLflow Instance (Shared for Local and CI/CD)
+  mlflow:
     image: ghcr.io/mlflow/mlflow:latest
-    container_name: mlflow_prod
+    container_name: mlflow
     ports:
       - "5555:5000"
     working_dir: /mlflow
@@ -13,23 +12,7 @@ services:
       - MLFLOW_S3_ENDPOINT_URL=http://rustfs:9000
       - MLFLOW_S3_IGNORE_TLS=true
     volumes:
-      - ../mlflow-history-prod:/mlflow/data
-    command: mlflow server --host 0.0.0.0 --backend-store-uri sqlite:////mlflow/data/mlflow.db --default-artifact-root mlflow-artifacts:/ --artifacts-destination /mlflow/data/artifacts --serve-artifacts
-
-  # Experiment Tracking (Local Exploration - Not Tracked)
-  mlflow_local:
-    image: ghcr.io/mlflow/mlflow:latest
-    container_name: mlflow_local
-    ports:
-      - "5556:5000"
-    working_dir: /mlflow
-    environment:
-      - AWS_ACCESS_KEY_ID=rustfsadmin
-      - AWS_SECRET_ACCESS_KEY=rustfsadmin
-      - MLFLOW_S3_ENDPOINT_URL=http://rustfs:9000
-      - MLFLOW_S3_IGNORE_TLS=true
-    volumes:
-      - ../local-mlflow-history:/mlflow/data
+      - ../mlflow-history:/mlflow/data
     command: mlflow server --host 0.0.0.0 --backend-store-uri sqlite:////mlflow/data/mlflow.db --default-artifact-root mlflow-artifacts:/ --artifacts-destination /mlflow/data/artifacts --serve-artifacts
 
   # Human-in-the-Loop Labeling
@@ -42,44 +25,20 @@ services:
       - ../label_studio_data:/label-studio/data
       - ../data:/label-studio/data/projects-data
     environment:
-      - LABEL_STUDIO_USERNAME=admin@example.com
-      - LABEL_STUDIO_PASSWORD=mlops123
-      - LABEL_STUDIO_USER_TOKEN=4c5c6e9a5c5c42458204e855a68a0fcd4c5c6e9a
-      - LABEL_STUDIO_ENABLE_LEGACY_API_TOKEN=true
-      - SECRET_KEY=mlops-secret-key-123
+      - DJANGO_DB=default
       - LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true
-      - LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=/
+      - LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=/label-studio/data/projects-data
 
-  # Inference Server (Placeholder for now)
-  # mlserver:
-  #   image: seldonio/mlserver:latest
-  #   container_name: mlserver
-  #   ports:
-  #     - "8081:8080"
-  #   volumes:
-  #     - ../models:/models
-  #   environment:
-  #     - MLSERVER_MODEL_REPOSITORY_ROOT=/models
-  # S3-compatible Remote Storage (Apache 2.0)
+  # S3 Compatible Storage (RustFS)
   rustfs:
-    image: rustfs/rustfs:latest
+    image: minio/minio:latest
     container_name: rustfs
-    restart: unless-stopped
     ports:
-      - "9000:9000" # S3 API
-      - "9001:9001" # Console
+      - "9000:9000"
+      - "9001:9001"
     environment:
-      - RUSTFS_ADDRESS=0.0.0.0:9000
-      - RUSTFS_CONSOLE_ADDRESS=0.0.0.0:9001
-      - RUSTFS_CONSOLE_ENABLE=true
-      - RUSTFS_ACCESS_KEY=rustfsadmin
-      - RUSTFS_SECRET_KEY=rustfsadmin
-      - RUSTFS_VOLUMES=/data
+      - MINIO_ROOT_USER=rustfsadmin
+      - MINIO_ROOT_PASSWORD=rustfsadmin
     volumes:
       - ../dvc-storage:/data
-      - ./rustfs_logs:/app/logs
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://127.0.0.1:9000/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    command: server /data --console-address ":9001"

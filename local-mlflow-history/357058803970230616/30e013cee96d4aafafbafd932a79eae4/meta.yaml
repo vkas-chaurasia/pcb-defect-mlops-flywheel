@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/357058803970230616/30e013cee96d4aafafbafd932a79eae4/artifacts
+end_time: 1778882635863
+entry_point_name: ''
+experiment_id: '357058803970230616'
+lifecycle_stage: active
+run_id: 30e013cee96d4aafafbafd932a79eae4
+run_name: casual-grouse-175
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1778882598928
+status: 3
+tags: []
+user_id: vikas
