@@ -64,7 +64,7 @@ jobs:
       run: |
         echo "📡 MLflow Tracking URI: $MLFLOW_TRACKING_URI"
         echo "📦 S3 Endpoint: $MLFLOW_S3_ENDPOINT_URL"
-        dvc repro -f train
+        dvc repro
         dvc push
 
     - name: Generate Metrics Report and Post to GitHub PR
