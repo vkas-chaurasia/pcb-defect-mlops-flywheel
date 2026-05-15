@@ -16,3 +16,6 @@ stages:
     outs:
       - mlruns/:
           remote: logs-storage
+    metrics:
+      - metrics.json:
+          cache: false

@@ -19,7 +19,7 @@ CLASS_NAMES = ["open", "short", "mousebite", "spur", "spurious_copper", "pin_hol
 PROCESSED_DIR = Path("data/processed")
 YOLO_DIR      = Path("data/yolo")
 RUNS_DIR      = Path("runs/train")
-MLFLOW_URI    = "http://localhost:5555"
+MLFLOW_URI    = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5555")
 
 # ---------------------------------------------------------------------------
 # 1. Data Conversion (NPZ -> YOLO)
@@ -136,9 +136,14 @@ def main():
 
         # Log training metrics
         metrics = results.results_dict
-        mlflow.log_metrics({k.replace("(", "_").replace(")", ""): v for k, v in metrics.items()})
+        clean_metrics = {k.replace("(", "_").replace(")", ""): v for k, v in metrics.items()}
+        mlflow.log_metrics(clean_metrics)
         
-        print("Final training metrics logged.")
+        # Save metrics for DVC CI/CD
+        with open("metrics.json", "w") as f:
+            json.dump(clean_metrics, f, indent=4)
+        
+        print("Final training metrics logged to MLflow and metrics.json.")
 
         # Log the formal PyTorch model (enables "Register Model" button)
         best_pt = Path(f"runs/detect/pcb-defect-detection/{run_name}/weights/best.pt")
