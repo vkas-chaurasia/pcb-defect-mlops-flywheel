@@ -56,10 +56,11 @@ jobs:
 
     - name: Reproduce Pipeline
       env:
-        MLFLOW_TRACKING_URI: http://localhost:5555
+        MLFLOW_TRACKING_URI: http://localhost:5556
         MLFLOW_S3_ENDPOINT_URL: http://localhost:9000
         AWS_ACCESS_KEY_ID: rustfsadmin
         AWS_SECRET_ACCESS_KEY: rustfsadmin
+        MLFLOW_EXPERIMENT_NAME: pcb-defect-production
       run: |
         echo "📡 MLflow Tracking URI: $MLFLOW_TRACKING_URI"
         echo "📦 S3 Endpoint: $MLFLOW_S3_ENDPOINT_URL"
@@ -78,31 +79,29 @@ jobs:
         echo "### Metrics vs Main" >> report.md
         dvc metrics diff --md --all main >> report.md
         
-        # Deep Links to the Original MLflow Run
-        if [ -f mlflow_run.txt ]; then
-          source mlflow_run.txt
+        # Deep Links to the Official Validation Run
+        if [ -f mlflow_run_official.txt ]; then
+          source mlflow_run_official.txt
           echo "---" >> report.md
-          echo "* [View Original Training Run]($RUN_URL)" >> report.md
+          echo "* [View Official Validation Run]($RUN_URL)" >> report.md
           echo "* [View Full Experiment Suite]($EXP_URL)" >> report.md
           echo "---" >> report.md
         fi
         
         # Visual Artifacts
-        if [ -f last_run_path.txt ]; then
-          ABS_RUN_PATH=$(cat last_run_path.txt)
-          # Convert absolute path to relative for CML
-          REL_RUN_PATH=$(echo $ABS_RUN_PATH | sed "s|$GITHUB_WORKSPACE/||")
+        if [ -f mlflow_run_official.txt ]; then
+          source mlflow_run_official.txt
           echo "### Visual Analysis" >> report.md
           
           echo "#### Training Loss and Metrics Curves" >> report.md
-          cml publish "$REL_RUN_PATH/results.png" --md >> report.md
+          cml publish "$RUN_PATH/results.png" --md >> report.md
           
           echo "#### F1 and Precision-Recall Curves" >> report.md
-          cml publish "$REL_RUN_PATH/BoxF1_curve.png" --md >> report.md
-          cml publish "$REL_RUN_PATH/BoxPR_curve.png" --md >> report.md
+          cml publish "$RUN_PATH/BoxF1_curve.png" --md >> report.md
+          cml publish "$RUN_PATH/BoxPR_curve.png" --md >> report.md
           
           echo "#### Confusion Matrix" >> report.md
-          cml publish "$REL_RUN_PATH/confusion_matrix.png" --md >> report.md
+          cml publish "$RUN_PATH/confusion_matrix.png" --md >> report.md
         fi
         
         # Update existing comment or create new one with watermark to prevent duplicates

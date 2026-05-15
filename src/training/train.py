@@ -111,18 +111,37 @@ def main():
     else:
         device = 'cpu'
 
+    # MLflow Industry Standard: Environment-Aware Tracking
+    mlflow.set_tracking_uri(MLFLOW_URI)
+    exp_name = os.getenv("MLFLOW_EXPERIMENT_NAME", "pcb-defect-exploration")
+    mlflow.set_experiment(exp_name)
+    exp = mlflow.get_experiment_by_name(exp_name)
+
+    # Enable Autologging for PyTorch/YOLO
+    mlflow.autolog(log_models=True)
+
+    # Disable YOLO's internal noisy callback to let MLflow Autolog handle it
+    from ultralytics import YOLO, settings
+    settings.update({"mlflow": False})
+    
+    # Hide tracking URI from YOLO's internal environment
+    _uri = os.environ.pop("MLFLOW_TRACKING_URI", None)
+    
+    model = YOLO(f"{args.model}.pt")
+
+    # Detect device (priority: Nvidia -> Mac -> CPU)
+    import torch
+    if torch.cuda.is_available():
+        device = 0
+    elif torch.backends.mps.is_available():
+        device = 'mps'
+    else:
+        device = 'cpu'
+
     with mlflow.start_run() as run:
         run_id = run.info.run_id
         run_name = run.info.run_name
-        print(f"Training on device: {device} | MLflow Run: {run_name}")
-
-        # Log hyperparameters
-        mlflow.log_params({
-            "model": args.model,
-            "epochs": args.epochs,
-            "batch": args.batch,
-            "img_size": args.img_size,
-        })
+        print(f"🚀 Industry Mode Active | Experiment: {exp_name} | Run: {run_name}")
 
         results = model.train(
             data=str(yaml_path),
@@ -142,28 +161,13 @@ def main():
         # Save metrics for DVC
         metrics = results.results_dict
         clean_metrics = {k.replace("(", "_").replace(")", ""): v for k, v in metrics.items()}
-        mlflow.log_metrics(clean_metrics)
-        
         with open("metrics.json", "w") as f:
             json.dump(clean_metrics, f, indent=4)
 
-        # Log all YOLO artifacts
-        yolo_run_dir = RUNS_DIR / "pcb-defect-detection" / run_name
-        if yolo_run_dir.exists():
-            mlflow.log_artifacts(str(yolo_run_dir))
-            
-            # Export metadata for CI/CD
-            with open("last_run_path.txt", "w") as f:
-                f.write(str(yolo_run_dir))
-            
-            # THE KEY: Save the Run ID for the CI/CD to promote
-            with open("mlflow_run.txt", "w") as f:
-                f.write(f"RUN_ID={run_id}\n")
-                f.write(f"EXP_ID={exp.experiment_id}\n")
-                f.write(f"RUN_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}/runs/{run_id}\n")
-                f.write(f"EXP_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}\n")
+    print(f"\n✅ Training Complete. View in MLflow.")
 
-    print(f"\nTraining and Logging Complete. Run ID: {run_id}")
+if __name__ == "__main__":
+    main()
 
 if __name__ == "__main__":
     main()

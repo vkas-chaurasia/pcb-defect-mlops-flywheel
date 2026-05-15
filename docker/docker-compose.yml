@@ -1,20 +1,27 @@
 services:
-  # Experiment Tracking
+  # Experiment Tracking (DEVELOPER PLAYGROUND - Local Storage)
   mlflow:
     image: ghcr.io/mlflow/mlflow:latest
-    container_name: mlflow
+    container_name: mlflow_dev
     ports:
       - "5555:5000"
     working_dir: /mlflow
+    volumes:
+      - ../dvc-storage/mlflow-history:/mlflow/data
+    command: mlflow server --host 0.0.0.0 --backend-store-uri /mlflow/data --default-artifact-root /mlflow/data/artifacts --serve-artifacts
+
+  # --- PRODUCTION / VALIDATION ENVIRONMENT (S3 / RustFS Storage) ---
+  mlflow-prod:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: mlflow_prod
+    ports:
+      - "5556:5000"
     environment:
       - AWS_ACCESS_KEY_ID=rustfsadmin
       - AWS_SECRET_ACCESS_KEY=rustfsadmin
       - MLFLOW_S3_ENDPOINT_URL=http://rustfs:9000
       - MLFLOW_S3_IGNORE_TLS=true
-    volumes:
-      - ../dvc-storage/mlflow-history:/mlflow/data
-      - ../dvc-storage:/dvc-storage
-    command: mlflow server --host 0.0.0.0 --backend-store-uri /mlflow/data --default-artifact-root mlflow-artifacts:/ --serve-artifacts
+    command: mlflow server --host 0.0.0.0 --backend-store-uri sqlite:///mlflow_prod.db --default-artifact-root s3://mlflow-prod-artifacts/
 
   # Human-in-the-Loop Labeling
   label-studio:

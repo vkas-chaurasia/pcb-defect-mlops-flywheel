@@ -19,3 +19,13 @@ stages:
     metrics:
       - metrics.json:
           cache: false
+  report:
+    cmd: python3 src/training/report.py
+    deps:
+      - runs
+      - metrics.json
+      - src/training/report.py
+    outs:
+      - mlflow_run_official.txt:
+          cache: false
+    always_changed: true
