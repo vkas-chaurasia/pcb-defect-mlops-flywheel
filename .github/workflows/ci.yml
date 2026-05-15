@@ -21,7 +21,7 @@ jobs:
         docker rm label-studio mlflow rustfs || true
 
         # Use a tiny Docker container to delete root-owned folders
-        for folder in label_studio_data mlruns dvc-storage rustfs_logs; do
+        for folder in label_studio_data mlruns rustfs_logs; do
           if [ -d "$folder" ]; then
             echo "Force cleaning $folder..."
             docker run --rm -v $(pwd):/workspace alpine rm -rf "/workspace/$folder"
