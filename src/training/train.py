@@ -96,8 +96,10 @@ def main():
     yaml_path = prepare_yolo_data(PROCESSED_DIR, YOLO_DIR, args.img_size)
 
     # MLflow Setup
+    print(f"🔗 Connecting to MLflow at {MLFLOW_URI}...")
     mlflow.set_tracking_uri(MLFLOW_URI)
     mlflow.set_experiment("pcb-defect-detection")
+    print("✅ Connected to MLflow Experiment: pcb-defect-detection")
     exp = mlflow.get_experiment_by_name("pcb-defect-detection")
 
     # Disable YOLO's internal MLflow callback to prevent duplicate runs
