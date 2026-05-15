@@ -15,11 +15,15 @@ from ultralytics import settings
 from tqdm import tqdm
 
 # --- Configuration ---
-CLASS_NAMES = ["open", "short", "mousebite", "spur", "spurious_copper", "pin_hole"]
-PROCESSED_DIR = Path("data/processed")
-YOLO_DIR      = Path("data/yolo")
-RUNS_DIR      = Path("runs/train")
-MLFLOW_URI    = "http://localhost:5555"
+PROJECT_ROOT  = Path(os.getcwd()).absolute()
+CLASS_NAMES   = ["open", "short", "mousebite", "spur", "spurious_copper", "pin_hole"]
+PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
+YOLO_DIR      = PROJECT_ROOT / "data" / "yolo"
+RUNS_DIR      = PROJECT_ROOT / "runs" / "detect"
+MLFLOW_URI    = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5555")
+
+# S3 Configuration is now handled by the MLflow Artifact Proxy (Server-side)
+# Direct client-side S3 access is no longer required.
 
 # ---------------------------------------------------------------------------
 # 1. Data Conversion (NPZ -> YOLO)
@@ -118,30 +122,45 @@ def main():
         else:
             device = 'cpu' # Fallback to CPU
             
-        print(f"🚀 Training on device: {device}")
-
-        # Train
-        results = model.train(
-            data=str(yaml_path),
-            epochs=args.epochs,
-            imgsz=args.img_size,
-            batch=args.batch,
-            project="pcb-defect-detection",
-            name=run_name,
-            exist_ok=True,
-            device=device
-        )
+        # Smart Cache: Check if training results already exist
+        yolo_run_dir = RUNS_DIR / "pcb-defect-detection" / run_name
+        results_csv = yolo_run_dir / "results.csv"
+        
+        if results_csv.exists():
+            print(f"✨ Smart Cache Hit: Found existing results in {yolo_run_dir}. Skipping training and proceeding to logging.")
+            # Create a mock results object to satisfy the logging logic
+            from types import SimpleNamespace
+            results = SimpleNamespace(results_dict={})
+        else:
+            print(f"🚀 Training on device: {device}")
+            # Train
+            results = model.train(
+                data=str(yaml_path),
+                epochs=args.epochs,
+                imgsz=args.img_size,
+                batch=args.batch,
+                project=str(RUNS_DIR / "pcb-defect-detection"),
+                name=run_name,
+                exist_ok=True,
+                device=device
+            )
+        
         if _uri:
             os.environ["MLFLOW_TRACKING_URI"] = _uri
 
         # Log training metrics
         metrics = results.results_dict
-        mlflow.log_metrics({k.replace("(", "_").replace(")", ""): v for k, v in metrics.items()})
+        clean_metrics = {k.replace("(", "_").replace(")", ""): v for k, v in metrics.items()}
+        mlflow.log_metrics(clean_metrics)
         
-        print("Final training metrics logged.")
+        # Save metrics for DVC CI/CD
+        with open("metrics.json", "w") as f:
+            json.dump(clean_metrics, f, indent=4)
+        
+        print("Final training metrics logged to MLflow and metrics.json.")
 
         # Log the formal PyTorch model (enables "Register Model" button)
-        best_pt = Path(f"runs/detect/pcb-defect-detection/{run_name}/weights/best.pt")
+        best_pt = yolo_run_dir / "weights" / "best.pt"
 
         if best_pt.exists():
             import torch
@@ -167,9 +186,8 @@ def main():
         })
 
         # Log all YOLO artifacts (plots, charts, labels, etc.)
-        yolo_run_dir = Path(f"runs/detect/pcb-defect-detection/{run_name}")
         if yolo_run_dir.exists():
-            print("Uploading visual plots and charts to MLflow...")
+            print(f"Uploading visual plots and charts from {yolo_run_dir} to MLflow...")
             mlflow.log_artifacts(str(yolo_run_dir))
 
         print("Data profile and artifacts logged.")

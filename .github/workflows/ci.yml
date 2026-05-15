@@ -1,0 +1,78 @@
+name: MLOps Flywheel CI/CD
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  validate-pipeline:
+    runs-on: self-hosted
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        clean: false
+
+    - name: Setup Safe CI Environment (macOS)
+      run: |
+        python3 -m venv .venv_ci_tools
+        .venv_ci_tools/bin/pip install setuptools
+        echo "$(pwd)/.venv_ci_tools/bin" >> $GITHUB_PATH
+        brew install pkg-config cairo pango libffi
+
+    - name: Setup CML
+      uses: iterative/setup-cml@v2
+
+    - name: Create Virtual Environment
+      run: |
+        python3 -m venv .venv_ci
+        echo "$GITHUB_WORKSPACE/.venv_ci/bin" >> $GITHUB_PATH
+
+    - name: Install Dependencies
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Ensure Infrastructure is Running
+      run: docker compose -f docker/docker-compose.yml up -d
+
+    - name: Pull Data from DVC
+      env:
+        MLFLOW_S3_ENDPOINT_URL: http://localhost:9000
+        AWS_ACCESS_KEY_ID: rustfsadmin
+        AWS_SECRET_ACCESS_KEY: rustfsadmin
+      run: dvc pull data/raw.dvc -f
+
+    - name: Reproduce Pipeline
+      env:
+        MLFLOW_TRACKING_URI: http://localhost:5555
+        MLFLOW_S3_ENDPOINT_URL: http://localhost:9000
+        AWS_ACCESS_KEY_ID: rustfsadmin
+        AWS_SECRET_ACCESS_KEY: rustfsadmin
+      run: |
+        echo "📡 MLflow Tracking URI: $MLFLOW_TRACKING_URI"
+        echo "📦 S3 Endpoint: $MLFLOW_S3_ENDPOINT_URL"
+        dvc repro -f
+        dvc push
+
+    - name: Generate Metrics Report and Post to GitHub PR
+      env:
+        REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo "## DVC Pipeline Metrics" >> report.md
+        echo "Here are the results of the latest automated training run. View the full visual charts in [MLflow](http://localhost:5555)." >> report.md
+        git fetch --depth=1 origin main:main
+        echo "### Performance Diff (vs main)" >> report.md
+        dvc metrics diff --md main >> report.md
+        cml comment create report.md
