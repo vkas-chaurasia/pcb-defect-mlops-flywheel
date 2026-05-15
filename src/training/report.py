@@ -56,6 +56,19 @@ def generate_report():
     run_url = f"{MLFLOW_URI}/#/experiments/{exp.experiment_id}/runs/{run_id}"
     exp_url = f"{MLFLOW_URI}/#/experiments/{exp.experiment_id}"
     
+    # Load metrics for the summary table
+    metrics_path = Path("metrics.json")
+    m = {}
+    if metrics_path.exists():
+        with open(metrics_path) as f:
+            m = json.load(f)
+
+    # Format metrics safely
+    p = f"{m.get('metrics/precision_B', 0.0):.3f}"
+    r = f"{m.get('metrics/recall_B', 0.0):.3f}"
+    map50 = f"{m.get('metrics/mAP50_B', 0.0):.3f}"
+    map95 = f"{m.get('metrics/mAP50-95_B', 0.0):.3f}"
+
     report_content = [
         "# MLOps Flywheel: Official Validation Report",
         "\nAn automated, system-verified training run has completed successfully.",
@@ -63,11 +76,18 @@ def generate_report():
         f"* **Experiment**: [View All Runs]({exp_url})",
         f"* **Validation Run**: [View Detailed Metrics & Weights]({run_url})",
         f"* **System Job ID**: `{github_run_id}`",
-        "\n## Visual Evidence",
+        "\n## Visual Analysis",
+        "### Training Loss and Metrics Curves",
         f"![Results]({latest_folder}/results.png)",
+        "\n### F1 and Precision-Recall Curves",
+        f"![F1 Curve]({latest_folder}/BoxF1_curve.png)",
+        f"![PR Curve]({latest_folder}/BoxPR_curve.png)",
+        "\n### Confusion Matrix",
+        f"![Confusion Matrix]({latest_folder}/confusion_matrix.png)",
         "\n## Model Performance Summary",
         "| Class | Images | Instances | Box(P) | R | mAP50 | mAP50-95 |",
-        "|-------|--------|-----------|--------|---|-------|----------|"
+        "|-------|--------|-----------|--------|---|-------|----------|",
+        f"| **all** | 224 | 1508 | {p} | {r} | {map50} | {map95} |"
     ]
     
     # Optionally add rows from metrics.json if needed, but YOLO results.png is usually better
