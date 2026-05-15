@@ -25,8 +25,8 @@ pip install -r requirements.txt
 dvc pull
 ```
 
-### 2. Launch Infrastructure (Label Studio)
-We use Docker to orchestrate Label Studio and MLflow.
+### 2. Launch Infrastructure (Label Studio, MLflow, & RustFS)
+We use Docker to orchestrate Label Studio, MLflow, and RustFS (our DVC remote storage server).
 ```bash
 docker compose -f docker/docker-compose.yml up -d
 ```
