@@ -189,6 +189,10 @@ def main():
         if yolo_run_dir.exists():
             print(f"Uploading visual plots and charts from {yolo_run_dir} to MLflow...")
             mlflow.log_artifacts(str(yolo_run_dir))
+            
+            # Export the path for CI/CD reporting
+            with open("last_run_path.txt", "w") as f:
+                f.write(str(yolo_run_dir))
 
         print("Data profile and artifacts logged.")
 
