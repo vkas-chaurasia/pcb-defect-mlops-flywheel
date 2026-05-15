@@ -121,19 +121,29 @@ def main():
         else:
             device = 'cpu' # Fallback to CPU
             
-        print(f"🚀 Training on device: {device}")
-
-        # Train
-        results = model.train(
-            data=str(yaml_path),
-            epochs=args.epochs,
-            imgsz=args.img_size,
-            batch=args.batch,
-            project="pcb-defect-detection",
-            name=run_name,
-            exist_ok=True,
-            device=device
-        )
+        # Smart Cache: Check if training results already exist
+        yolo_run_dir = Path(f"runs/detect/pcb-defect-detection/{run_name}")
+        results_csv = yolo_run_dir / "results.csv"
+        
+        if results_csv.exists():
+            print(f"✨ Smart Cache Hit: Found existing results in {yolo_run_dir}. Skipping training and proceeding to logging.")
+            # Create a mock results object to satisfy the logging logic
+            from types import SimpleNamespace
+            results = SimpleNamespace(results_dict={})
+        else:
+            print(f"🚀 Training on device: {device}")
+            # Train
+            results = model.train(
+                data=str(yaml_path),
+                epochs=args.epochs,
+                imgsz=args.img_size,
+                batch=args.batch,
+                project="pcb-defect-detection",
+                name=run_name,
+                exist_ok=True,
+                device=device
+            )
+        
         if _uri:
             os.environ["MLFLOW_TRACKING_URI"] = _uri
 
@@ -175,7 +185,6 @@ def main():
         })
 
         # Log all YOLO artifacts (plots, charts, labels, etc.)
-        yolo_run_dir = Path(f"runs/detect/pcb-defect-detection/{run_name}")
         if yolo_run_dir.exists():
             print("Uploading visual plots and charts to MLflow...")
             mlflow.log_artifacts(str(yolo_run_dir))
