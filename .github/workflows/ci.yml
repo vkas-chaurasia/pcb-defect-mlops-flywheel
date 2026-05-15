@@ -14,10 +14,15 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
+    - name: Create Virtual Environment
+      run: |
+        python3 -m venv .venv_ci
+        echo "$GITHUB_WORKSPACE/.venv_ci/bin" >> $GITHUB_PATH
+
     - name: Install Dependencies
       run: |
-        python3 -m pip install --upgrade pip
-        python3 -m pip install -r requirements.txt
+        pip install --upgrade pip
+        pip install -r requirements.txt
 
     - name: Ensure Infrastructure is Running
       run: docker compose -f docker/docker-compose.yml up -d
