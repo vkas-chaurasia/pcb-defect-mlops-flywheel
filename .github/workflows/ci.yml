@@ -46,7 +46,7 @@ jobs:
 
     - name: Clean and Start Infrastructure
       run: |
-        docker compose -f docker/docker-compose.yml down -v || true
+        docker compose -f docker/docker-compose.yml down -v --remove-orphans || true
         mkdir -p mlflow-history
         chmod -R 777 mlflow-history
         docker compose -f docker/docker-compose.yml up -d
