@@ -53,9 +53,10 @@ def generate_report():
         download_path = Path("report_assets")
         download_path.mkdir(exist_ok=True)
         
-        # Download the results folder we archived in train.py
-        download_artifacts(run_id=run_id, artifact_path="results", dst_path=str(download_path))
-        latest_folder = download_path / "results"
+        # Download the contents of the run directly to report_assets (Root Level)
+        # This matches the structure where YOLO logs everything to the run root.
+        download_artifacts(run_id=run_id, artifact_path="", dst_path=str(download_path))
+        latest_folder = download_path
         print(f"Artifacts successfully harvested to {latest_folder}")
     except Exception as e:
         print(f"Warning: Cloud harvest failed ({e}). Falling back to local disk search...")
