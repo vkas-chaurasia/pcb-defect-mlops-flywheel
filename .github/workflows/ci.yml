@@ -83,19 +83,19 @@ jobs:
           echo "### 🖼️ Visual Analysis" >> report.md
           
           echo "#### Training Loss & Metrics Curves" >> report.md
-          cml publish $LAST_RUN/results.png --md >> report.md
+          echo "![]($LAST_RUN/results.png)" >> report.md
           
           echo "#### F1 & Precision-Recall Curves" >> report.md
-          cml publish $LAST_RUN/BoxF1_curve.png --md >> report.md
-          cml publish $LAST_RUN/BoxPR_curve.png --md >> report.md
+          echo "![]($LAST_RUN/BoxF1_curve.png)" >> report.md
+          echo "![]($LAST_RUN/BoxPR_curve.png)" >> report.md
           
           echo "#### Confusion Matrix" >> report.md
-          cml publish $LAST_RUN/confusion_matrix.png --md >> report.md
+          echo "![]($LAST_RUN/confusion_matrix.png)" >> report.md
         fi
         
         echo "" >> report.md
         echo "---" >> report.md
         echo "🔍 View full logs and downloadable models in the [MLflow Dashboard](http://localhost:5555)." >> report.md
         
-        # Use a unique ID to update the same comment instead of creating duplicates
-        cml comment create --id="mlops-report" report.md
+        # Use watermark-title to update the same comment instead of creating duplicates
+        cml comment create --watermark-title="mlops-report" report.md
