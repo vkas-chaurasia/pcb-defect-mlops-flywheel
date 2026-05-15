@@ -14,20 +14,6 @@ jobs:
       pull-requests: write
 
     steps:
-    - name: Cleanup Locked Docker Folders
-      run: |
-        # Stop any containers that might be locking the folders
-        docker stop label-studio mlflow rustfs || true
-        docker rm label-studio mlflow rustfs || true
-
-        # Use a tiny Docker container to delete root-owned folders
-        for folder in label_studio_data mlruns rustfs_logs; do
-          if [ -d "$folder" ]; then
-            echo "Force cleaning $folder..."
-            docker run --rm -v $(pwd):/workspace alpine rm -rf "/workspace/$folder"
-          fi
-        done
-
     - name: Checkout Repository
       uses: actions/checkout@v4
       with:
