@@ -44,7 +44,7 @@ jobs:
       run: docker compose -f docker/docker-compose.yml up -d
 
     - name: Pull Data from DVC
-      run: dvc pull -f
+      run: dvc pull data/raw.dvc -f
 
     - name: Reproduce Pipeline
       run: |
