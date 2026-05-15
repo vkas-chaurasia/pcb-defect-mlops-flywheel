@@ -86,11 +86,6 @@ def main():
 
     # Disable YOLO's internal noisy MLflow callback to prevent collisions
     settings.update({"mlflow": False})
-    
-    # Hide direct S3 access from the client to force Proxy Mode (High-Fidelity)
-    os.environ.pop("MLFLOW_S3_ENDPOINT_URL", None)
-    os.environ.pop("AWS_ACCESS_KEY_ID", None)
-    os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
 
     model = YOLO(f"{args.model}.pt")
 
