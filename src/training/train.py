@@ -94,16 +94,27 @@ def main():
     exp = mlflow.get_experiment_by_name("pcb-defect-detection")
 
     # Disable YOLO's internal MLflow callback to prevent duplicate runs
+    from ultralytics import YOLO, settings
     settings.update({"mlflow": False})
-
-    from ultralytics import YOLO
+    
+    # Hide tracking URI from YOLO's internal environment
+    _uri = os.environ.pop("MLFLOW_TRACKING_URI", None)
+    
     model = YOLO(f"{args.model}.pt")
+
+    # Detect device (priority: Nvidia -> Mac -> CPU)
+    import torch
+    if torch.cuda.is_available():
+        device = 0
+    elif torch.backends.mps.is_available():
+        device = 'mps'
+    else:
+        device = 'cpu'
 
     with mlflow.start_run() as run:
         run_id = run.info.run_id
         run_name = run.info.run_name
-        print(f"MLflow Run ID: {run_id}")
-        print(f"MLflow Run Name: {run_name}")
+        print(f"Training on device: {device} | MLflow Run: {run_name}")
 
         # Log hyperparameters
         mlflow.log_params({
@@ -113,100 +124,45 @@ def main():
             "img_size": args.img_size,
         })
 
-        # Train — temporarily hide the tracking URI so YOLO's internal
-        # MLflow callback doesn't create a second run
-        _uri = os.environ.pop("MLFLOW_TRACKING_URI", None)
-        # Detect device (priority: Nvidia -> Mac -> CPU)
-        import torch
-        if torch.cuda.is_available():
-            device = 0 # Use first NVIDIA GPU
-        elif torch.backends.mps.is_available():
-            device = 'mps' # Use Apple Silicon GPU
-        else:
-            device = 'cpu' # Fallback to CPU
-            
-        # Smart Cache: Check if training results already exist
-        yolo_run_dir = RUNS_DIR / "pcb-defect-detection" / run_name
-        results_csv = yolo_run_dir / "results.csv"
-        
-        if results_csv.exists():
-            print(f"✨ Smart Cache Hit: Found existing results in {yolo_run_dir}. Skipping training and proceeding to logging.")
-            # Create a mock results object to satisfy the logging logic
-            from types import SimpleNamespace
-            results = SimpleNamespace(results_dict={})
-        else:
-            print(f"🚀 Training on device: {device}")
-            # Train
-            results = model.train(
-                data=str(yaml_path),
-                epochs=args.epochs,
-                imgsz=args.img_size,
-                batch=args.batch,
-                project=str(RUNS_DIR / "pcb-defect-detection"),
-                name=run_name,
-                exist_ok=True,
-                device=device
-            )
-        
+        results = model.train(
+            data=str(yaml_path),
+            epochs=args.epochs,
+            imgsz=args.img_size,
+            batch=args.batch,
+            project=str(RUNS_DIR / "pcb-defect-detection"),
+            name=run_name,
+            exist_ok=True,
+            device=device
+        )
+
+        # Restore URI
         if _uri:
             os.environ["MLFLOW_TRACKING_URI"] = _uri
 
-        # Log training metrics
+        # Save metrics for DVC
         metrics = results.results_dict
         clean_metrics = {k.replace("(", "_").replace(")", ""): v for k, v in metrics.items()}
         mlflow.log_metrics(clean_metrics)
         
-        # Save metrics for DVC CI/CD
         with open("metrics.json", "w") as f:
             json.dump(clean_metrics, f, indent=4)
-        
-        print("Final training metrics logged to MLflow and metrics.json.")
 
-        # Log the formal PyTorch model (enables "Register Model" button)
-        best_pt = yolo_run_dir / "weights" / "best.pt"
-
-        if best_pt.exists():
-            import torch
-            ckpt = torch.load(best_pt, weights_only=False)
-            brain = ckpt['model']
-
-            print("Logging formal PyTorch model flavor...")
-            mlflow.pytorch.log_model(
-                pytorch_model=brain,
-                artifact_path="pcb-yolo-model"
-            )
-
-            print("Formal PyTorch model flavour logged.")
-
-        # Log dataset profile (mean/std)
-        stats_path = PROCESSED_DIR / "dataset_stats.json"
-        with open(stats_path) as f:
-            stats = json.load(f)
-
-        mlflow.log_params({
-            "mean_rgb": stats["mean"],
-            "std_rgb": stats["std"],
-        })
-
-        # Log all YOLO artifacts (plots, charts, labels, etc.)
+        # Log all YOLO artifacts
+        yolo_run_dir = RUNS_DIR / "pcb-defect-detection" / run_name
         if yolo_run_dir.exists():
-            print(f"Uploading visual plots and charts from {yolo_run_dir} to MLflow...")
             mlflow.log_artifacts(str(yolo_run_dir))
             
-            # Export the path for CI/CD reporting
+            # Export metadata for CI/CD
             with open("last_run_path.txt", "w") as f:
                 f.write(str(yolo_run_dir))
+            
+            # THE KEY: Save the Run ID for the CI/CD to promote
+            with open("mlflow_run.txt", "w") as f:
+                f.write(f"RUN_ID={run_id}\n")
+                f.write(f"EXP_ID={exp.experiment_id}\n")
+                f.write(f"RUN_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}/runs/{run_id}\n")
 
-        # Export URLs for CI/CD reporting
-        with open("mlflow_urls.txt", "w") as f:
-            f.write(f"RUN_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}/runs/{run.info.run_id}\n")
-            f.write(f"EXP_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}\n")
-
-        print(f"🏃 View run {run_name} at: {MLFLOW_URI}/#/experiments/{exp.experiment_id}/runs/{run.info.run_id}")
-        print(f"🧪 View experiment at: {MLFLOW_URI}/#/experiments/{exp.experiment_id}")
-        print("Data profile and artifacts logged.")
-
-    print(f"\nTraining Complete. View logs at: {MLFLOW_URI}")
+    print(f"\nTraining and Logging Complete. Run ID: {run_id}")
 
 if __name__ == "__main__":
     main()

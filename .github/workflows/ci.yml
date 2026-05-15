@@ -63,27 +63,30 @@ jobs:
       run: |
         echo "📡 MLflow Tracking URI: $MLFLOW_TRACKING_URI"
         echo "📦 S3 Endpoint: $MLFLOW_S3_ENDPOINT_URL"
-        dvc repro -f
+        dvc repro
         dvc push
 
     - name: Generate Metrics Report and Post to GitHub PR
       env:
         REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Generate Metrics Report and Post to GitHub PR
+      env:
+        REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        echo "## 🚀 MLOps Flywheel: Training Report" >> report.md
+        echo "## MLOps Flywheel: Training Report" >> report.md
         echo "The automated training run has completed successfully. Below is a detailed performance breakdown." >> report.md
         
         # Performance Diff
         git fetch origin main:main
-        echo "### 📈 Metrics vs Main" >> report.md
+        echo "### Metrics vs Main" >> report.md
         dvc metrics diff --md --all main >> report.md
         
-        # Deep Links to MLflow
-        if [ -f mlflow_urls.txt ]; then
-          source mlflow_urls.txt
+        # Deep Links to the Original MLflow Run
+        if [ -f mlflow_run.txt ]; then
+          source mlflow_run.txt
           echo "---" >> report.md
-          echo "🏃 **[View Exact Training Run]($RUN_URL)**" >> report.md
-          echo "🧪 **[View Full Experiment Suite]($EXP_URL)**" >> report.md
+          echo "View Original Training Run: $RUN_URL" >> report.md
+          echo "View Full Experiment Suite: $EXP_URL" >> report.md
           echo "---" >> report.md
         fi
         
@@ -92,12 +95,12 @@ jobs:
           ABS_RUN_PATH=$(cat last_run_path.txt)
           # Convert absolute path to relative for CML
           REL_RUN_PATH=$(echo $ABS_RUN_PATH | sed "s|$GITHUB_WORKSPACE/||")
-          echo "### 🖼️ Visual Analysis" >> report.md
+          echo "### Visual Analysis" >> report.md
           
-          echo "#### Training Loss & Metrics Curves" >> report.md
+          echo "#### Training Loss and Metrics Curves" >> report.md
           cml publish "$REL_RUN_PATH/results.png" --md >> report.md
           
-          echo "#### F1 & Precision-Recall Curves" >> report.md
+          echo "#### F1 and Precision-Recall Curves" >> report.md
           cml publish "$REL_RUN_PATH/BoxF1_curve.png" --md >> report.md
           cml publish "$REL_RUN_PATH/BoxPR_curve.png" --md >> report.md
           

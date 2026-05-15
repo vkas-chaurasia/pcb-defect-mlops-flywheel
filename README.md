@@ -1,127 +1,104 @@
-# PCB Defect Detection – MLOps Pipeline
+# PCB Defect Detection: MLOps Flywheel
 
-This repository contains our MLOps pipeline for automated PCB defect detection. We have implemented a complete loop where our YOLOv8 model identifies defects and routes ambiguous cases to Label Studio for verification and retraining data collection.
+This repository implements an end-to-end MLOps pipeline for automated PCB defect detection. The architecture integrates model training, data versioning, and automated reporting into a high-fidelity feedback loop.
 
 ---
 
-## Quick Start (Team Setup)
+## Infrastructure Overview
 
-We follow these steps to get the entire pipeline running locally.
+The pipeline utilizes a containerized infrastructure managed via Docker Compose:
+
+*   **Label Studio**: Human-in-the-loop data annotation and active learning.
+*   **MLflow**: Centralized experiment tracking and model registry.
+*   **RustFS**: S3-compatible object storage serving as the DVC remote cache.
+*   **DVC**: Data and model versioning with automated pipeline reproduction.
+*   **CML**: Continuous Machine Learning for visual reporting in GitHub Pull Requests.
+
+---
+
+## Quick Start (Onboarding)
+
+Follow these steps to initialize the environment and synchronize the latest model artifacts.
 
 ### 1. Environment Setup
 ```bash
-# Clone the repository and enter the directory
+# Clone the repository
+git clone <repository_url>
 cd pcb-defect-mlops-flywheel
 
-# Create our local environment bridge
+# Configure environment variables
 cp .env.example .env
 
-# Install dependencies (recommended in a virtual environment)
+# Initialize virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
-# Pull heavy data and models from DVC remote storage
+# Synchronize data and models from remote storage
 dvc pull
 ```
 
-### 2. Launch Infrastructure (Label Studio, MLflow, & RustFS)
-We use Docker to orchestrate Label Studio, MLflow, and RustFS (our DVC remote storage server).
+### 2. Launch Infrastructure
 ```bash
 docker compose -f docker/docker-compose.yml up -d
 ```
-*   **Label Studio**: http://localhost:8080
-*   **Credentials**: admin@example.com / mlops123
-*   **Automated Project**: We have pre-configured a project named "PCB Defect Detection" with the correct defect labels (open, short, mousebite, spur, spurious_copper, pin_hole).
+Access points:
+*   Label Studio: http://localhost:8080 (admin@example.com / mlops123)
+*   MLflow: http://localhost:5555
+*   RustFS Console: http://localhost:9001
 
-### 3. Start the Pipeline Services
-We open two terminal tabs (with our virtual environment active):
+---
 
-**Tab 1: Inference Server (Fetching from Registry)**
+## The MLOps Workflow
+
+### 1. Local Development and Training
+We use DVC to manage the reproduction of the training pipeline.
+
 ```bash
-# We pull and run the latest champion model from our MLflow registry
-python src/serving/serve.py --weights models:/pcb-defect-model@champion
+# Execute the training pipeline
+dvc repro
 ```
 
-**Tab 2: Streamlit Dashboard**
+**What happens behind the scenes:**
+1.  **Data Prep**: Raw data is processed into YOLOv8 format.
+2.  **Training**: The model is trained. Performance metrics are saved to `metrics.json`.
+3.  **Logging**: The script logs all parameters, metrics, and visual artifacts to MLflow.
+4.  **Mapping**: A specialized metadata file, `mlflow_run.txt`, is generated to map the current Git/DVC state to the specific MLflow Run ID.
+
+### 2. Versioning and Promotion
+To share results with the team and activate CI/CD validation:
+
 ```bash
-streamlit run src/app/main.py
+# Snapshot the results and push to remote storage
+dvc push
+git add dvc.lock mlflow_run.txt metrics.json
+git commit -m "feat: optimize hyperparameters for pcb-detection"
+git push origin <branch_name>
 ```
 
 ---
 
-## The Pipeline Loop (Demo Workflow)
+## CI/CD Validation Architecture
 
-### Step 1: Detection
-We open our Streamlit Dashboard at http://localhost:8501. We can upload images or use the simulation directory to see the model predict defects in real-time.
+Our GitHub Actions pipeline follows a "Pure Promotion" model to ensure absolute traceability and computational efficiency.
 
-### Step 2: Trigger the Loop
-We click the "Trigger Loop" button. This script (batch_inference.py) will:
-1.  Run our model on the unseen_simulation dataset.
-2.  Route all detections and low-confidence images to Label Studio.
-3.  Apply Pre-Annotations: We send the model's boxes automatically so we do not have to label from scratch.
+### Dual-Mode Execution
+The CI/CD runner executes `dvc repro` in a clean environment:
 
-### Step 3: Human-in-the-loop (Label Studio)
-1.  We log in to Label Studio at http://localhost:8080.
-2.  We open our PCB Defect Detection project.
-3.  We review the pre-annotated boxes, correcting any mistakes or adding missing detections.
-4.  We click Submit.
+1.  **Cached Mode (Success Path)**: If you have already trained and pushed the results locally, DVC identifies that the code and parameters have not changed. It skips the training process and simply downloads your `runs/` folder and `mlflow_run.txt` from RustFS.
+2.  **Validation Mode**: The pipeline reads the downloaded `mlflow_run.txt` and uses its metadata to generate a deep-linked report in your Pull Request.
 
-### Step 4: Syncing New Data
-Once we have submitted our labels, we run the sync script to pull them back into our training set:
-```bash
-python src/utils/sync_labels.py
-```
-*   **Output**: Our new YOLO-formatted data (Images + .txt labels) appears in data/raw/active_learning/.
-*   **DVC**: We then use `dvc add` to version these new files.
+### Visual Reporting
+Every Pull Request automatically receives a performance report containing:
+*   **Metrics vs Main**: A side-by-side comparison of accuracy against the production baseline.
+*   **Deep Links**: Direct URLs to the original MLflow experiment and specific run.
+*   **Visual Analysis**: Loss curves, F1-curves, and confusion matrices embedded directly in the PR comment.
 
 ---
 
 ## Tech Stack
-*   **Model**: YOLOv8 (Ultralytics)
-*   **Orchestration**: Docker Compose
-*   **Annotation**: Label Studio
-*   **Dashboard**: Streamlit
-*   **Backend**: FastAPI
-*   **Data Versioning**: DVC
-
----
-
-## Team Collaboration
-*   **Shared Credentials**: We standardize all API tokens and login credentials via .env.example.
-*   **Infrastructure**: Our docker-compose configuration ensures that all team members are running identical versions of the environment.
-
----
-
-## Experiment Tracking & CI/CD Validation
-
-We use DVC to separate local model exploration from automated pipeline validation.
-
-### 1. Local Exploration
-We use `dvc exp run` to test multiple hyperparameters locally without writing custom bash scripts.
-```bash
-# Example: Queueing multiple variations
-dvc exp run --queue -n exp1 -S train.epochs=2
-dvc exp run --queue -n exp2 -S train.epochs=3 -S train.batch=8
-dvc exp run --run-all
-```
-Once we identify the best performing experiment, we apply it to our workspace:
-```bash
-dvc exp apply <experiment_name>
-```
-This updates our `params.yaml` and `dvc.lock` files with the winning configuration. 
-
-Finally, we must push the heavy model artifacts to our shared remote storage (RustFS) so the rest of the team and CI/CD can access them:
-```bash
-dvc push
-```
-We then commit `params.yaml` and `dvc.lock` to Git.
-
-### 2. CI/CD Validation
-Our automated CI/CD pipelines (e.g., GitHub Actions) do *not* run multiple experiments. Instead, they use:
-```bash
-dvc repro
-```
-By reading the committed `params.yaml` and `dvc.lock`, the CI/CD pipeline knows exactly which configuration is approved. 
-
-**Crucially, it does not retrain the model.** Because we use a shared DVC remote cache (our RustFS server), when CI/CD runs `dvc repro`, DVC detects that the training step has already been computed for these exact parameters and code. It skips the expensive training process entirely and simply downloads the cached model artifacts, saving massive amounts of compute time and money.
+*   **Detection**: YOLOv8 (Ultralytics)
+*   **Orchestration**: Docker Compose, GitHub Actions
+*   **Storage**: DVC, RustFS (S3)
+*   **Tracking**: MLflow
+*   **Reporting**: CML (Iterative)
