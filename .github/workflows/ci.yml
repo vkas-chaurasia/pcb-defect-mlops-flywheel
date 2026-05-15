@@ -14,9 +14,12 @@ jobs:
     - name: Cleanup Locked Docker Folders
       run: |
         # Use a tiny Docker container to delete root-owned folders that the runner can't touch
-        if [ -d "label_studio_data" ]; then
-          docker run --rm -v $(pwd):/workspace alpine rm -rf /workspace/label_studio_data
-        fi
+        for folder in label_studio_data mlruns dvc-storage rustfs_logs; do
+          if [ -d "$folder" ]; then
+            echo "Cleaning up $folder..."
+            docker run --rm -v $(pwd):/workspace alpine rm -rf "/workspace/$folder"
+          fi
+        done
 
     - name: Checkout Repository
       uses: actions/checkout@v4
