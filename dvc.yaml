@@ -6,7 +6,6 @@ stages:
       - src/data/preprocess.py
     outs:
       - data/processed
-      - data/yolo
   
   train:
     cmd: python3 src/training/train.py --epochs ${train.epochs} --img-size ${train.img_size} --batch ${train.batch}
@@ -14,6 +13,7 @@ stages:
       - data/processed
       - src/training/train.py
     outs:
+      - data/yolo
       - mlruns/:
           remote: logs-storage
     metrics:
