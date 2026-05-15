@@ -232,7 +232,7 @@ data/yolo
 models
 mlruns
 dvc/tests/
-mlflow-history/**/*
-!mlflow-history/**/*.dvc
+dvc-storage/mlflow-history/**/*
+!dvc-storage/mlflow-history/**/*.dvc
 /runs
 /mlflow_run.txt

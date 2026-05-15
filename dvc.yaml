@@ -15,7 +15,7 @@ stages:
     outs:
       - data/yolo
       - runs
-      - mlflow-history
+      - dvc-storage/mlflow-history
       - mlflow_run.txt
     metrics:
       - metrics.json:

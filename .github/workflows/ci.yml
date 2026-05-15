@@ -47,12 +47,11 @@ jobs:
     - name: Clean and Start Infrastructure
       run: |
         docker compose -f docker/docker-compose.yml down -v || true
-        mkdir -p mlflow-history
-        chmod -R 777 mlflow-history
+        mkdir -p dvc-storage/mlflow-history
+        chmod -R 777 dvc-storage
         docker compose -f docker/docker-compose.yml up -d
         echo "Waiting for MLflow API and RustFS to be ready..."
         for i in {1..30}; do
-          # Check MLflow API and MinIO health
           if curl -s http://localhost:5555/api/2.0/mlflow/experiments/list > /dev/null && curl -s http://localhost:9000/minio/health/live > /dev/null; then
             echo "Infrastructure is fully ready!"
             exit 0
