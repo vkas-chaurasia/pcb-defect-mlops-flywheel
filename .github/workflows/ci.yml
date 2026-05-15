@@ -46,9 +46,14 @@ jobs:
 
     - name: Clean and Start Infrastructure
       run: |
-        docker compose -f docker/docker-compose.yml down -v || true
+        # Only stop and recreate the PROD container, leave everything else alone!
+        docker compose -f docker/docker-compose.yml --profile prod stop mlflow_prod || true
+        docker compose -f docker/docker-compose.yml --profile prod rm -f mlflow_prod || true
+        
         mkdir -p mlflow-history-prod local-mlflow-history
         chmod -R 777 mlflow-history-prod local-mlflow-history
+        
+        # This will start mlflow_prod and ensure rustfs is running without killing your Dev work
         docker compose -f docker/docker-compose.yml --profile prod up -d
         echo "Waiting for MLflow API and RustFS to be ready..."
         for i in {1..30}; do
