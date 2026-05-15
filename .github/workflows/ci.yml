@@ -78,6 +78,15 @@ jobs:
         echo "### 📈 Metrics vs Main" >> report.md
         dvc metrics diff --md --all main >> report.md
         
+        # Deep Links to MLflow
+        if [ -f mlflow_urls.txt ]; then
+          source mlflow_urls.txt
+          echo "---" >> report.md
+          echo "🏃 **[View Exact Training Run]($RUN_URL)**" >> report.md
+          echo "🧪 **[View Full Experiment Suite]($EXP_URL)**" >> report.md
+          echo "---" >> report.md
+        fi
+        
         # Visual Artifacts
         if [ -f last_run_path.txt ]; then
           ABS_RUN_PATH=$(cat last_run_path.txt)
@@ -95,10 +104,6 @@ jobs:
           echo "#### Confusion Matrix" >> report.md
           cml publish "$REL_RUN_PATH/confusion_matrix.png" --md >> report.md
         fi
-        
-        echo "" >> report.md
-        echo "---" >> report.md
-        echo "🔍 View full logs and downloadable models in the [MLflow Dashboard](http://localhost:5555)." >> report.md
         
         # Update existing comment or create new one with watermark to prevent duplicates
         cml comment create --watermark-title="mlops-report" report.md

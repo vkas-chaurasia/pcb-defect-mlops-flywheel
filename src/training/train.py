@@ -90,7 +90,8 @@ def main():
 
     # MLflow Setup
     mlflow.set_tracking_uri(MLFLOW_URI)
-    exp = mlflow.set_experiment("pcb-defect-detection")
+    mlflow.set_experiment("pcb-defect-detection")
+    exp = mlflow.get_experiment_by_name("pcb-defect-detection")
 
     # Disable YOLO's internal MLflow callback to prevent duplicate runs
     settings.update({"mlflow": False})
@@ -99,7 +100,9 @@ def main():
     model = YOLO(f"{args.model}.pt")
 
     with mlflow.start_run() as run:
+        run_id = run.info.run_id
         run_name = run.info.run_name
+        print(f"MLflow Run ID: {run_id}")
         print(f"MLflow Run Name: {run_name}")
 
         # Log hyperparameters
