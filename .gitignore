@@ -229,3 +229,7 @@ mlruns/
 label_studio_data/
 server.log
 data/raw
+data/processed
+data/yolo
+models
+mlruns
