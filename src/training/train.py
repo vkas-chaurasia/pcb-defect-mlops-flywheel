@@ -21,6 +21,12 @@ YOLO_DIR      = Path("data/yolo")
 RUNS_DIR      = Path("runs/train")
 MLFLOW_URI    = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5555")
 
+# S3 Configuration for MLflow Artifacts
+os.environ["AWS_ACCESS_KEY_ID"] = "rustfsadmin"
+os.environ["AWS_SECRET_ACCESS_KEY"] = "rustfsadmin"
+os.environ["MLFLOW_S3_ENDPOINT_URL"] = "http://localhost:9000"
+os.environ["MLFLOW_S3_IGNORE_TLS"] = "true"
+
 # ---------------------------------------------------------------------------
 # 1. Data Conversion (NPZ -> YOLO)
 # ---------------------------------------------------------------------------

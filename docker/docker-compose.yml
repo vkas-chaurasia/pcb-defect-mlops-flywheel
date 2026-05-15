@@ -8,9 +8,14 @@ services:
     ports:
       - "5555:5000"
     working_dir: /mlflow
+    environment:
+      - AWS_ACCESS_KEY_ID=rustfsadmin
+      - AWS_SECRET_ACCESS_KEY=rustfsadmin
+      - MLFLOW_S3_ENDPOINT_URL=http://rustfs:9000
+      - MLFLOW_S3_IGNORE_TLS=true
     volumes:
       - ../mlruns:/mlflow/mlruns
-    command: mlflow server --host 0.0.0.0 --backend-store-uri sqlite:///mlflow/mlruns/mlflow.db --serve-artifacts --artifacts-destination /mlflow/mlruns --default-artifact-root mlflow-artifacts:/
+    command: mlflow server --host 0.0.0.0 --backend-store-uri sqlite:///mlflow/mlruns/mlflow.db --default-artifact-root s3://pcb-experiment-logs --serve-artifacts
 
   # Human-in-the-Loop Labeling
   label-studio:
