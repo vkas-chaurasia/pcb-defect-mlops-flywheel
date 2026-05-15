@@ -70,9 +70,14 @@ def main():
     # 1. Prep Data
     yaml_path = prepare_yolo_data(PROCESSED_DIR, YOLO_DIR, args.img_size)
 
-    # 2. MLflow Infrastructure Setup
+    # 2. MLflow Infrastructure Setup (Artifact Proxy Mode)
     tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5555")
     exp_name = os.getenv("MLFLOW_EXPERIMENT_NAME", "pcb-defect-exploration")
+    
+    # Hide direct S3 access from the client to force Proxy Mode (High-Fidelity)
+    os.environ.pop("MLFLOW_S3_ENDPOINT_URL", None)
+    os.environ.pop("AWS_ACCESS_KEY_ID", None)
+    os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
     
     mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_experiment(exp_name)

@@ -21,7 +21,8 @@ services:
       - AWS_SECRET_ACCESS_KEY=rustfsadmin
       - MLFLOW_S3_ENDPOINT_URL=http://rustfs:9000
       - MLFLOW_S3_IGNORE_TLS=true
-    command: mlflow server --host 0.0.0.0 --backend-store-uri sqlite:///mlflow_prod.db --default-artifact-root s3://mlflow-prod-artifacts/
+    # --serve-artifacts enables the artifact proxy (High-Fidelity Mode)
+    command: mlflow server --host 0.0.0.0 --backend-store-uri sqlite:///mlflow_prod.db --default-artifact-root s3://mlflow-prod-artifacts/ --serve-artifacts
 
   # Human-in-the-Loop Labeling
   label-studio:
@@ -40,17 +41,8 @@ services:
       - SECRET_KEY=mlops-secret-key-123
       - LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true
       - LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=/
+    restart: unless-stopped
 
-  # Inference Server (Placeholder for now)
-  # mlserver:
-  #   image: seldonio/mlserver:latest
-  #   container_name: mlserver
-  #   ports:
-  #     - "8081:8080"
-  #   volumes:
-  #     - ../models:/models
-  #   environment:
-  #     - MLSERVER_MODEL_REPOSITORY_ROOT=/models
   # S3-compatible Remote Storage (Apache 2.0)
   rustfs:
     image: rustfs/rustfs:latest
@@ -71,6 +63,20 @@ services:
       - ./rustfs_logs:/app/logs
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://127.0.0.1:9000/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Helper to automatically create the required production bucket
+  create_buckets:
+    image: minio/mc
+    container_name: bucket_creator
+    depends_on:
+      rustfs:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set myrustfs http://rustfs:9000 rustfsadmin rustfsadmin;
+      mc mb myrustfs/mlflow-prod-artifacts || true;
+      exit 0;
+      "
