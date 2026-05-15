@@ -35,9 +35,6 @@ jobs:
         python3 -m venv .venv_ci_tools
         .venv_ci_tools/bin/pip install setuptools
         echo "$(pwd)/.venv_ci_tools/bin" >> $GITHUB_PATH
-
-    - name: Install System Dependencies (macOS)
-      run: |
         brew install pkg-config cairo pango libffi
 
     - name: Setup CML
@@ -60,12 +57,14 @@ jobs:
       run: dvc pull data/raw.dvc -f
 
     - name: Reproduce Pipeline
+      env:
+        MLFLOW_TRACKING_URI: http://localhost:5555
+        MLFLOW_S3_ENDPOINT_URL: http://localhost:9000
+        AWS_ACCESS_KEY_ID: rustfsadmin
+        AWS_SECRET_ACCESS_KEY: rustfsadmin
       run: |
         dvc repro
         dvc push
-
-    - name: Setup CML (Continuous Machine Learning)
-      uses: iterative/setup-cml@v2
 
     - name: Generate Metrics Report and Post to GitHub PR
       env:
@@ -75,5 +74,5 @@ jobs:
         echo "Here are the results of the latest automated training run. View the full visual charts in [MLflow](http://localhost:5555)." >> report.md
         git fetch --depth=1 origin main:main
         echo "### Performance Diff (vs main)" >> report.md
-        dvc metrics diff --show-md main >> report.md
+        dvc metrics diff --md main >> report.md
         cml comment create report.md
