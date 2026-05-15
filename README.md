@@ -1,74 +1,88 @@
-# PCB Defect Detection System
+# PCB Defect Detection – Active Learning Pipeline
 
-This repository implements an end-to-end MLOps pipeline for detecting defects on PCBs (Printed Circuit Boards). It features an **Active Learning Flywheel** that allows for continuous model improvement via human-in-the-loop labeling.
+This repository contains a professional MLOps pipeline for automated PCB defect detection. It implements a complete Active Learning Loop (Human-in-the-loop) where a YOLOv8 model identifies defects and routes ambiguous cases to Label Studio for expert verification and retraining data collection.
 
-## 🏗 Architecture
+---
 
-The system is designed to be orchestrated entirely **locally** using Docker and DVC.
+## Quick Start (Team Setup)
 
-1.  **DVC Data Versioning**: Manages datasets in `data/raw`.
-2.  **PyTorch Training**: CNN-based defect detection trained in `src/training/`.
-3.  **MLflow Tracking**: All experiments, parameters, and model versions are logged to a local MLflow server.
-4.  **Local Orchestration**: Docker Compose manages MLflow and Label Studio.
-5.  **FastAPI (Custom Serving)**: High-performance inference engine with built-in **PASS/FAIL** logic and Swagger UI on port **8000**. Supports `/predict/batch`.
-6.  **Automated Pipeline**: A batch processor (`src/utils/batch_inference.py`) that automatically routes failures to Label Studio.
-7.  **Streamlit Dashboard**: A premium UI for live testing and manual pipeline orchestration.
-8.  **Active Learning Loop**: 
-    *   **Trigger**: The system controller scans `data/raw/unseen_simulation`.
-    *   **Filter**: All "FAIL" results or low-confidence predictions are automatically flagged.
-    *   **Label**: Images are sent to **Label Studio** for human review.
-    *   **Sync**: Labeled data is pulled back using `src/utils/sync_labels.py`.
+Follow these steps to get the entire pipeline running locally on your machine.
 
-## 📁 Project Structure
+### 1. Environment Setup
+```bash
+# Clone the repository and enter the directory
+git checkout feature/automated-pipeline
 
-```text
-.
-├── data/                   # Versioned data (Raw)
-├── models/                 # Trained model artifacts
-├── src/
-│   ├── data/               # OpenCV preprocessing scripts
-│   ├── training/           # PyTorch training logic
-│   ├── serving/            # FastAPI (serve.py) logic
-│   ├── app/                # Streamlit Dashboard
-│   └── utils/              # batch_inference.py & sync_labels.py
-├── docker/                 # Docker Compose & Service configs
-├── dvc.yaml                # MLOps Pipeline definition
-└── requirements.txt        # Project dependencies
+# Create your local environment bridge
+cp .env.example .env
+
+# Install dependencies (recommended in a virtual environment)
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
-## 🚀 Getting Started
+### 2. Launch Infrastructure (Label Studio)
+We use Docker to orchestrate Label Studio and MLflow with a Zero-Config approach.
+```bash
+docker compose -f docker/docker-compose.yml up -d
+```
+*   **Label Studio**: http://localhost:8080
+*   **Credentials**: admin@example.com / mlops123 (Shared for the whole team)
+*   **Automated Project**: A pre-configured project named "PCB Defect Detection" is automatically created with the correct defect labels (open, short, mousebite, spur, spurious_copper, pin_hole).
 
-1. **Install Dependencies**:
-   ```bash
-   uv pip install -r requirements.txt
-   ```
+### 3. Start the Pipeline Services
+Open two terminal tabs (with your virtual environment active):
 
-2. **Launch Services**:
-   ```bash
-   docker-compose -f docker/docker-compose.yml up -d
-   ```
+**Tab 1: Inference Server (AI Engine)**
+```bash
+python src/serving/serve.py --weights runs/detect/pcb-defect-detection/indecisive-hare-189/weights/best.pt
+```
 
-3. **Run the Flywheel**:
-   ```bash
-   dvc repro
-   ```
+**Tab 2: Streamlit Dashboard (UI)**
+```bash
+streamlit run src/app/main.py
+```
 
-4. **Promote the Champion**:
-   * Open MLflow UI (`http://localhost:5555`).
-   * Select your best model version and add the alias **`champion`** (or change stage to **`Production`**).
+---
 
-5. **Start Inference API**:
-   ```bash
-   .venv/bin/python src/serving/serve.py
-   ```
+## The Active Learning Loop (Demo Workflow)
 
-## ⚖️ License & Attribution
+### Step 1: Real-time Detection
+Open the Streamlit Dashboard at http://localhost:8501. Upload images or use the simulation directory. The model will predict defects in real-time.
 
-### Dataset
-This project uses the **DeepPCB** dataset from the research paper:
-> *Tang, S., et al. "On-line PCB Defect Detector On A New PCB Defect Dataset." (2019).*
+### Step 2: Trigger the Loop
+Click the "Trigger Active Learning Loop" button. This script (batch_inference.py) will:
+1.  Run the model on the unseen_simulation dataset.
+2.  Route all detections and low-confidence images to Label Studio.
+3.  Apply Pre-Annotations: The script sends the model's "best guess" boxes so labels do not need to be created from scratch.
 
-**Important**: Per the original authors' request, this dataset is for **research purposes only**. Please refer to the [DeepPCB GitHub Repository](https://github.com/tangsanli5201/DeepPCB) for more details.
+### Step 3: Human-in-the-loop (Label Studio)
+1.  Log in to Label Studio at http://localhost:8080.
+2.  Open the PCB Defect Detection project.
+3.  Review the pre-annotated boxes. Correct any mistakes or add missing detections.
+4.  Click Submit to finalize the annotation.
 
-### Code
-The MLOps infrastructure and FastAPI implementation in this repository are licensed under the **MIT License**.
+### Step 4: Syncing New Training Data
+Once labels have been submitted, run the sync script to pull them back into the project for future training:
+```bash
+python src/utils/sync_labels.py
+```
+*   **Output**: New YOLO-formatted data (Images + .txt labels) will appear in data/raw/active_learning/.
+*   **DVC**: These files are now ready to be versioned via `dvc add`.
+
+---
+
+## Tech Stack
+*   **Model**: YOLOv8 (Ultralytics)
+*   **Orchestration**: Docker Compose
+*   **Annotation**: Label Studio (with automated API integration)
+*   **Dashboard**: Streamlit
+*   **Backend**: FastAPI
+*   **Data Versioning**: DVC
+
+---
+
+## Team Collaboration
+*   **Shared Credentials**: All API tokens and login credentials are standardized via .env.example to ensure team-wide consistency.
+*   **Infrastructure**: The docker-compose configuration ensures that all team members are running identical versions of the labeling and tracking environments.
