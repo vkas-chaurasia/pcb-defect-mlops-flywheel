@@ -228,3 +228,4 @@ mlruns/
 *.pt
 label_studio_data/
 server.log
+data/raw
