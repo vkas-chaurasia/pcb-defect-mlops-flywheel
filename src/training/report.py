@@ -42,14 +42,28 @@ def generate_report():
         
     latest_run_data = runs.iloc[0]
     run_id = latest_run_data.run_id
-    print(f"DNA Match Found! Official Run: {run_id}")
-
-    # 3. Find the local artifact path for PR visualization
-    base_run_path = "runs/detect/pcb-defect-detection"
-    latest_folder = find_latest_run_folder(base_run_path)
-    if not latest_folder:
-        print(f"Error: No artifacts found in {base_run_path}")
-        return
+    run_name = latest_run_data["tags.mlflow.runName"]
+    print(f"DNA Match Found! Official Run: {run_id} ({run_name})")
+ 
+    # 3. Harvest Artifacts from Cloud Vault (MLflow Artifact Proxy)
+    # We download the charts directly from MLflow to ensure 100% availability
+    print(f"Harvesting visual evidence from MLflow Vault...")
+    try:
+        from mlflow.artifacts import download_artifacts
+        download_path = Path("report_assets")
+        download_path.mkdir(exist_ok=True)
+        
+        # Download the results folder we archived in train.py
+        download_artifacts(run_id=run_id, artifact_path="results", dst_path=str(download_path))
+        latest_folder = download_path / "results"
+        print(f"Artifacts successfully harvested to {latest_folder}")
+    except Exception as e:
+        print(f"Warning: Cloud harvest failed ({e}). Falling back to local disk search...")
+        base_run_path = "runs/detect/pcb-defect-detection"
+        latest_folder = Path(base_run_path) / run_name
+        if not latest_folder.exists():
+            print(f"Error: No artifacts found locally or in cloud.")
+            return
 
     # 4. Generate the Unified Markdown Report (report.md)
     # This file is consumed directly by CML
