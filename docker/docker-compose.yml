@@ -14,7 +14,7 @@ services:
       - MLFLOW_S3_IGNORE_TLS=true
     volumes:
       - ../mlflow-history-prod:/mlflow/data
-    command: mlflow server --host 0.0.0.0 --backend-store-uri /mlflow/data --default-artifact-root /mlflow/data/artifacts --serve-artifacts
+    command: mlflow server --host 0.0.0.0 --backend-store-uri /mlflow/data --default-artifact-root mlflow-artifacts:/ --serve-artifacts
 
   # Experiment Tracking (Local Exploration - Not Tracked)
   mlflow_local:
@@ -30,7 +30,7 @@ services:
       - MLFLOW_S3_IGNORE_TLS=true
     volumes:
       - ../local-mlflow-history:/mlflow/data
-    command: mlflow server --host 0.0.0.0 --backend-store-uri /mlflow/data --default-artifact-root /mlflow/data/artifacts --serve-artifacts
+    command: mlflow server --host 0.0.0.0 --backend-store-uri /mlflow/data --default-artifact-root mlflow-artifacts:/ --serve-artifacts
 
   # Human-in-the-Loop Labeling
   label-studio:

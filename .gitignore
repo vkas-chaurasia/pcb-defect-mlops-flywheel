@@ -238,3 +238,5 @@ mlflow-history-prod/**/*
 local-mlflow-history/**/*
 !local-mlflow-history/**/*.dvc
 /mlflow-history-prod
+/runs
+/mlflow_run.txt
