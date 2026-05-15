@@ -70,7 +70,7 @@ jobs:
       env:
         REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        echo "## MLOps Flywheel: Training Report" >> report.md
+        echo "## MLOps Flywheel: Training Report" > report.md
         echo "The automated training run has completed successfully. Below is a detailed performance breakdown." >> report.md
         
         # Performance Diff

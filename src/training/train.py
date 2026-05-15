@@ -161,6 +161,7 @@ def main():
                 f.write(f"RUN_ID={run_id}\n")
                 f.write(f"EXP_ID={exp.experiment_id}\n")
                 f.write(f"RUN_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}/runs/{run_id}\n")
+                f.write(f"EXP_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}\n")
 
     print(f"\nTraining and Logging Complete. Run ID: {run_id}")
 
