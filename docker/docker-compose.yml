@@ -1,5 +1,5 @@
 services:
-  # Unified MLflow Instance (Shared for Local and CI/CD)
+  # Smart Unified MLflow Instance
   mlflow:
     image: ghcr.io/mlflow/mlflow:latest
     container_name: mlflow
@@ -12,7 +12,8 @@ services:
       - MLFLOW_S3_ENDPOINT_URL=http://rustfs:9000
       - MLFLOW_S3_IGNORE_TLS=true
     volumes:
-      - ../mlflow-history-prod:/mlflow/data
+      # Defaults to prod history, but can be overridden locally via .env
+      - ${MLFLOW_HISTORY_PATH:-../mlflow-history-prod}:/mlflow/data
     command: mlflow server --host 0.0.0.0 --backend-store-uri /mlflow/data --default-artifact-root mlflow-artifacts:/ --serve-artifacts
 
   # Human-in-the-Loop Labeling

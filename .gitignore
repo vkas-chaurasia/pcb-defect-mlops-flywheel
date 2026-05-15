@@ -234,5 +234,7 @@ mlruns
 dvc/tests/
 mlflow-history-prod/**/*
 !mlflow-history-prod/**/*.dvc
+local-mlflow-history/**/*
+/local-mlflow-history
 /runs
 /mlflow_run.txt
