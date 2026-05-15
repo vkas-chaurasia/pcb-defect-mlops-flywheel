@@ -1,3 +1,4 @@
+# CI/CD Trigger: Kickstarting the pipeline
 import argparse
 import json
 import os
