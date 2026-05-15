@@ -59,10 +59,7 @@ def prepare_yolo_data(processed_dir: Path, yolo_dir: Path, img_size: int):
             stats = json.load(f)
         mean, std = np.array(stats["mean"]), np.array(stats["std"])
 
-        # Use slow-update progress bar in CI/CD (every 2s) to prevent log hangs
-        is_ci = os.getenv("GITHUB_ACTIONS") == "true"
-        update_interval = 2.0 if is_ci else 0.1
-        for i in tqdm(range(len(images)), desc=f"  {split}", leave=False, mininterval=update_interval):
+        for i in tqdm(range(len(images)), desc=f"  {split}", leave=False):
             # Save Image
             img_uint8 = np.clip((images[i] * (std + 1e-7) + mean) * 255, 0, 255).astype(np.uint8)
             cv2.imwrite(str(img_out / f"{split}_{i:06d}.jpg"), cv2.cvtColor(img_uint8, cv2.COLOR_RGB2BGR))

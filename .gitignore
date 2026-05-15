@@ -232,9 +232,8 @@ data/yolo
 models
 mlruns
 dvc/tests/
-mlflow-history/**/*
-!mlflow-history/**/*.dvc
+# Track the Simulation Vault (dvc-storage)
+!/dvc-storage
+/dvc-storage/.minio.sys
 /runs
 /mlflow_run.txt
-/dvc-storage
-/mlflow-history-prod
