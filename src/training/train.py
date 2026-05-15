@@ -62,9 +62,7 @@ def prepare_yolo_data(processed_dir: Path, yolo_dir: Path, img_size: int):
             stats = json.load(f)
         mean, std = np.array(stats["mean"]), np.array(stats["std"])
 
-        for i in range(len(images)):
-            if i % 50 == 0:
-                print(f"  {split}: Processing image {i}/{len(images)}...")
+        for i in tqdm(range(len(images)), desc=f"  {split}", leave=False):
             # Save Image
             img_uint8 = np.clip((images[i] * (std + 1e-7) + mean) * 255, 0, 255).astype(np.uint8)
             cv2.imwrite(str(img_out / f"{split}_{i:06d}.jpg"), cv2.cvtColor(img_uint8, cv2.COLOR_RGB2BGR))
