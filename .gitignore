@@ -233,3 +233,8 @@ models
 mlruns
 dvc/tests/
 dvc-storage/
+mlflow-history-prod/**/*
+!mlflow-history-prod/**/*.dvc
+local-mlflow-history/**/*
+!local-mlflow-history/**/*.dvc
+/mlflow-history-prod

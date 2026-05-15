@@ -1,8 +1,9 @@
 services:
   # Experiment Tracking
-  mlflow:
+  # Experiment Tracking (Shared / CI/CD)
+  mlflow_prod:
     image: ghcr.io/mlflow/mlflow:latest
-    container_name: mlflow
+    container_name: mlflow_prod
     ports:
       - "5555:5000"
     working_dir: /mlflow
@@ -12,9 +13,24 @@ services:
       - MLFLOW_S3_ENDPOINT_URL=http://rustfs:9000
       - MLFLOW_S3_IGNORE_TLS=true
     volumes:
-      - ../dvc-storage/mlflow-history:/mlflow/data
-      - ../dvc-storage:/dvc-storage
-    command: mlflow server --host 0.0.0.0 --backend-store-uri /mlflow/data --default-artifact-root mlflow-artifacts:/ --serve-artifacts
+      - ../mlflow-history-prod:/mlflow/data
+    command: mlflow server --host 0.0.0.0 --backend-store-uri /mlflow/data --default-artifact-root /mlflow/data/artifacts --serve-artifacts
+
+  # Experiment Tracking (Local Exploration - Not Tracked)
+  mlflow_local:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: mlflow_local
+    ports:
+      - "5556:5000"
+    working_dir: /mlflow
+    environment:
+      - AWS_ACCESS_KEY_ID=rustfsadmin
+      - AWS_SECRET_ACCESS_KEY=rustfsadmin
+      - MLFLOW_S3_ENDPOINT_URL=http://rustfs:9000
+      - MLFLOW_S3_IGNORE_TLS=true
+    volumes:
+      - ../local-mlflow-history:/mlflow/data
+    command: mlflow server --host 0.0.0.0 --backend-store-uri /mlflow/data --default-artifact-root /mlflow/data/artifacts --serve-artifacts
 
   # Human-in-the-Loop Labeling
   label-studio:
