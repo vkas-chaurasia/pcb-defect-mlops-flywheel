@@ -14,7 +14,7 @@ services:
     volumes:
       - ../dvc-storage/mlflow-history:/mlflow/data
       - ../dvc-storage:/dvc-storage
-    command: mlflow server --host 0.0.0.0 --backend-store-uri /mlflow/data --default-artifact-root s3://pcb-experiment-logs --serve-artifacts
+    command: mlflow server --host 0.0.0.0 --backend-store-uri /mlflow/data --default-artifact-root mlflow-artifacts:/ --serve-artifacts
 
   # Human-in-the-Loop Labeling
   label-studio:
