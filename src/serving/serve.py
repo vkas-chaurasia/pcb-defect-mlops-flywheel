@@ -50,6 +50,7 @@ try:
     from fastapi import FastAPI, File, HTTPException, Query, UploadFile
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import JSONResponse
+    from fastapi.staticfiles import StaticFiles
     from pydantic import BaseModel
     import uvicorn
 except ImportError:
@@ -245,6 +246,9 @@ app.add_middleware(
     allow_methods  = ["*"],
     allow_headers  = ["*"],
 )
+
+# Serve raw data for Label Studio (Zero-Config fix)
+app.mount("/data", StaticFiles(directory="data"), name="data")
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Monitoring"])

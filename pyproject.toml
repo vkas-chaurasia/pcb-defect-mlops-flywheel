@@ -1,5 +1,5 @@
 [project]
-name = "pcb-defect-mlops-flywheel"
+name = "pcb-defect-mlops-pipeline"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"

@@ -1,7 +1,7 @@
-# MLOps Flywheel: Step-by-Step Execution Guide (Portable Edition)
+# MLOps Pipeline: Step-by-Step Execution Guide (Portable Edition)
 
 ## 🎙 The Technical Elevator Pitch (For Exams/Interviews)
-> *"In the data flywheel, retraining is controlled by a threshold-based trigger implemented inside the pipeline. While DVC detects data changes and GitHub Actions orchestrates execution, the pipeline logic compares the current dataset size with the last trained state and only retrains when a predefined threshold (e.g., 5-10 new samples) is reached."*
+> *"In the data loop, retraining is controlled by a threshold-based trigger implemented inside the pipeline. While DVC detects data changes and GitHub Actions orchestrates execution, the pipeline logic compares the current dataset size with the last trained state and only retrains when a predefined threshold (e.g., 5-10 new samples) is reached."*
 
 ---
 
@@ -45,7 +45,7 @@ Start MLflow, Label Studio, and lakeFS:
 
 ---
 
-## Phase 3: The Flywheel Workflow
+## Phase 3: The Active Learning Workflow
 
 ### 3.1 Adding Data (The DVC Cycle)
 ```bash
@@ -65,14 +65,14 @@ dvc push
 ## Phase 4: Running the Engine
 
 ### 4.1 Initial Training (Local)
-Before starting the flywheel, you need a baseline model.
+Before starting the pipeline, you need a baseline model.
 ```bash
 # Run the pipeline locally on your Mac
 dvc repro
 ```
 This creates your first `models/model.pth`.
 
-### 4.2 The Automated Flywheel (via act)
+### 4.2 The Automated Pipeline (via act)
 Once the project is live, you use **Automation** to retrain.
 1. **Sync**: `python src/utils/sync_labels.py` (Pull new human labels).
 2. **Automate**: `act push` (The Driver).
@@ -101,7 +101,7 @@ Defense (If asked about `dvc-storage`)
 
 ---
 
-## Phase 7: Professional Model Serving (MLServer)
+## Phase 7: Model Serving (MLServer)
 
 Instead of the app loading the model directly, we use **MLServer** for production-grade inference.
 
