@@ -6,10 +6,10 @@ import yaml
 import mlflow
 import mlflow.pytorch
 from ultralytics import YOLO, settings
-import torch
 from tqdm import tqdm
 import cv2
 import numpy as np
+import torch
 
 # --- Configuration ---
 PROJECT_ROOT  = Path(os.getcwd()).absolute()
@@ -17,6 +17,11 @@ CLASS_NAMES   = ["open", "short", "mousebite", "spur", "spurious_copper", "pin_h
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 YOLO_DIR      = PROJECT_ROOT / "data" / "yolo"
 RUNS_DIR      = PROJECT_ROOT / "runs" / "detect"
+MLFLOW_URI    = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5555")
+
+# ---------------------------------------------------------------------------
+# 1. Data Conversion (NPZ -> YOLO)
+# ---------------------------------------------------------------------------
 
 def prepare_yolo_data(processed_dir: Path, yolo_dir: Path, img_size: int):
     """Convert .npz files into YOLOv8 format."""
@@ -59,6 +64,10 @@ def prepare_yolo_data(processed_dir: Path, yolo_dir: Path, img_size: int):
         yaml.dump(dataset_cfg, f)
     return yaml_path
 
+# ---------------------------------------------------------------------------
+# 2. Training with MLflow Tracking
+# ---------------------------------------------------------------------------
+
 def main():
     parser = argparse.ArgumentParser(description="PCB Training with MLflow")
     parser.add_argument("--epochs", type=int, default=50)
@@ -67,45 +76,49 @@ def main():
     parser.add_argument("--img-size", type=int, default=224)
     args = parser.parse_args()
 
-    # 1. Prep Data
+    # Prep Data
     yaml_path = prepare_yolo_data(PROCESSED_DIR, YOLO_DIR, args.img_size)
 
-    # 2. MLflow Infrastructure Setup (Environment-Aware)
-    tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5555")
+    # MLflow Setup (Environment-Aware)
+    mlflow.set_tracking_uri(MLFLOW_URI)
     exp_name = os.getenv("MLFLOW_EXPERIMENT_NAME", "pcb-defect-exploration")
-    
-    mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_experiment(exp_name)
+
+    # Disable YOLO's internal noisy MLflow callback to prevent collisions
+    settings.update({"mlflow": False})
     
     # Hide direct S3 access from the client to force Proxy Mode (High-Fidelity)
-    # This ensures YOLO uses the MLflow server's proxy for uploads.
     os.environ.pop("MLFLOW_S3_ENDPOINT_URL", None)
     os.environ.pop("AWS_ACCESS_KEY_ID", None)
     os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
-    
-    # 3. ENABLE YOLO's native MLflow integration (This restores artifacts/models)
-    settings.update({"mlflow": True})
 
-    # 4. Initialize Model and Hardware
     model = YOLO(f"{args.model}.pt")
-    if torch.cuda.is_available():
-        device = 0
-    elif torch.backends.mps.is_available():
-        device = 'mps'
-    else:
-        device = 'cpu'
 
-    # 5. Execute Training within a Manual Run for DNA Tagging
-    # YOLOv8 will automatically join this active run and log everything.
     with mlflow.start_run() as run:
-        run_id = run.info.run_id
         run_name = run.info.run_name
         print(f"Industry Mode Active | Experiment: {exp_name} | Run: {run_name}")
-        
-        # Tag the run with the unique Job ID for surgical traceability
+
+        # Sign the run with the unique Job ID for surgical traceability (Auditor)
         github_run_id = os.getenv("GITHUB_RUN_ID", "local")
         mlflow.set_tag("github_run_id", github_run_id)
 
+        # Log hyperparameters
+        mlflow.log_params({
+            "model": args.model,
+            "epochs": args.epochs,
+            "batch": args.batch,
+            "img_size": args.img_size,
+        })
+
+        # Detect device
+        if torch.cuda.is_available():
+            device = 0
+        elif torch.backends.mps.is_available():
+            device = 'mps'
+        else:
+            device = 'cpu'
+
+        # Execute Training
         results = model.train(
             data=str(yaml_path),
             epochs=args.epochs,
@@ -117,13 +130,33 @@ def main():
             device=device
         )
 
-        # 6. Export Metrics for DVC
+        # Log training metrics
         metrics = results.results_dict
         clean_metrics = {k.replace("(", "_").replace(")", ""): v for k, v in metrics.items()}
+        mlflow.log_metrics(clean_metrics)
+        
+        # Save metrics for DVC CI/CD
         with open("metrics.json", "w") as f:
             json.dump(clean_metrics, f, indent=4)
 
-    print(f"\nTraining Complete. View in MLflow.")
+        # Log the formal PyTorch model flavor (from Master)
+        yolo_run_dir = RUNS_DIR / "pcb-defect-detection" / run_name
+        best_pt = yolo_run_dir / "weights" / "best.pt"
+
+        if best_pt.exists():
+            print("Logging formal PyTorch model flavor...")
+            ckpt = torch.load(best_pt, weights_only=False)
+            mlflow.pytorch.log_model(
+                pytorch_model=ckpt['model'],
+                artifact_path="pcb-yolo-model"
+            )
+
+        # Log all YOLO artifacts (plots, charts, labels, etc.)
+        if yolo_run_dir.exists():
+            print(f"Uploading visual plots and charts from {yolo_run_dir} to MLflow...")
+            mlflow.log_artifacts(str(yolo_run_dir))
+
+    print(f"\nTraining Complete. View logs at: {MLFLOW_URI}")
 
 if __name__ == "__main__":
     main()
