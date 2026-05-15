@@ -57,6 +57,10 @@ jobs:
       run: docker compose -f docker/docker-compose.yml up -d
 
     - name: Pull Data from DVC
+      env:
+        MLFLOW_S3_ENDPOINT_URL: http://localhost:9000
+        AWS_ACCESS_KEY_ID: rustfsadmin
+        AWS_SECRET_ACCESS_KEY: rustfsadmin
       run: dvc pull data/raw.dvc -f
 
     - name: Reproduce Pipeline
