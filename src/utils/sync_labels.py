@@ -1,28 +1,49 @@
 import os
-import requests
-import yaml
+import json
+import shutil
+from pathlib import Path
 from label_studio_sdk import Client
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Load configuration
-with open("configs/config.yaml", "r") as f:
-    config = yaml.safe_load(f)
-
-# Label Studio Credentials (defaults for local setup)
+# Label Studio Credentials
 LS_URL = os.getenv("LABEL_STUDIO_URL", "http://localhost:8080")
-LS_API_KEY = os.getenv("LABEL_STUDIO_API_KEY", "your_api_key_here")
-PROJECT_ID = os.getenv("LABEL_STUDIO_PROJECT_ID", "1")
+LS_API_KEY = os.getenv("LABEL_STUDIO_API_KEY", "4c5c6e9a5c5c42458204e855a68a0fcd4c5c6e9a")
+PROJECT_ID = int(os.getenv("LABEL_STUDIO_PROJECT_ID", "1"))
 
-RAW_DATA_DIR = "data/raw"
+# Paths
+# We save to raw/active_learning so they can be tracked by DVC later
+OUTPUT_DIR = Path("data/raw/active_learning")
+IMAGE_SOURCE_DIR = Path("data/raw/unseen_simulation")
 
-def sync_from_label_studio():
-    """
-    Connects to Label Studio, finds completed tasks, and downloads
-    them into the project's raw data folder to trigger the flywheel.
-    """
-    print(f"Connecting to Label Studio at {LS_URL}...")
+# YOLO Class Mapping (Must match serve.py)
+CLASS_MAPPING = {
+    "open": 0,
+    "short": 1,
+    "mousebite": 2,
+    "spur": 3,
+    "spurious_copper": 4,
+    "pin_hole": 5,
+}
+
+def convert_ls_to_yolo(ls_rect, img_width, img_height):
+    """Converts Label Studio rectangle to YOLO format (normalized cx, cy, w, h)."""
+    # LS values are percentages (0-100)
+    x = ls_rect['x'] / 100.0
+    y = ls_rect['y'] / 100.0
+    w = ls_rect['width'] / 100.0
+    h = ls_rect['height'] / 100.0
+    
+    # YOLO format is center-based
+    cx = x + (w / 2.0)
+    cy = y + (h / 2.0)
+    
+    return cx, cy, w, h
+
+def sync_labels():
+    """Downloads annotations from Label Studio and saves them in YOLO format."""
+    print(f"📡 Connecting to Label Studio at {LS_URL}...")
     
     try:
         ls = Client(url=LS_URL, api_key=LS_API_KEY)
@@ -33,42 +54,57 @@ def sync_from_label_studio():
         exported_count = 0
         
         for task in tasks:
-            if task.get('annotations'):
-                # Get the latest annotation
-                annotation = task['annotations'][0]
-                result = annotation.get('result', [])
+            if not task.get('annotations'):
+                continue
                 
-                if not result:
+            # Get latest annotation
+            annotation = task['annotations'][0]
+            results = annotation.get('result', [])
+            
+            if not results:
+                continue
+                
+            # Get original filename from URL or data
+            # URL format: http://localhost:8000/data/raw/unseen_simulation/filename.jpg
+            image_url = task['data']['image']
+            filename = os.path.basename(image_url).split('?')[0] # Remove query params if any
+            base_name = os.path.splitext(filename)[0]
+            
+            # YOLO Label content
+            yolo_lines = []
+            
+            for res in results:
+                if res['type'] != 'rectanglelabels':
                     continue
                 
-                # Check if it was labeled as a 'Defect'
-                label = result[0]['value']['choices'][0]
-                is_defect = "Defect" in label
+                val = res['value']
+                label_name = val['rectanglelabels'][0]
+                class_id = CLASS_MAPPING.get(label_name, 0)
                 
-                # Get image URL and filename
-                image_url = task['data']['image']
-                filename = os.path.basename(image_url)
+                # Convert coordinates
+                cx, cy, w, h = convert_ls_to_yolo(val, res['original_width'], res['original_height'])
+                yolo_lines.append(f"{class_id} {cx:.6f} {cy:.6f} {w:.6f} {h:.6f}")
+            
+            if yolo_lines:
+                # Save label file
+                label_file = OUTPUT_DIR / f"{base_name}.txt"
+                with open(label_file, "w") as f:
+                    f.write("\n".join(yolo_lines))
                 
-                # Add 'defect' prefix if applicable to help the dataset class
-                prefix = "defect_" if is_defect else "no_defect_"
-                save_name = prefix + filename
-                save_path = os.path.join(RAW_DATA_DIR, save_name)
+                # Copy image to active_learning for a complete dataset
+                image_src = IMAGE_SOURCE_DIR / filename
+                if image_src.exists():
+                    shutil.copy(image_src, OUTPUT_DIR / filename)
                 
-                # Download the image
-                if not os.path.exists(save_path):
-                    print(f"Downloading new labeled image: {save_name}")
-                    # Note: You might need to pass headers if LS is authenticated
-                    r = requests.get(image_url)
-                    with open(save_path, 'wb') as f:
-                        f.write(r.content)
-                    exported_count += 1
+                print(f"✅ Synced: {filename} ({len(yolo_lines)} defects)")
+                exported_count += 1
         
-        print(f"Sync complete. Added {exported_count} new samples to {RAW_DATA_DIR}.")
+        print(f"\n✨ Exported {exported_count} labels to {OUTPUT_DIR}")
+        print("💡 These are now ready to be moved to your training folder!")
         
     except Exception as e:
-        print(f"Error syncing from Label Studio: {e}")
-        print("💡 Simulation Tip: In a demo, you can manually move images into 'data/raw' to simulate this sync.")
+        print(f"❌ Error during sync: {e}")
 
 if __name__ == "__main__":
-    os.makedirs(RAW_DATA_DIR, exist_ok=True)
-    sync_from_label_studio()
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    sync_labels()
