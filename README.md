@@ -20,6 +20,9 @@ cp .env.example .env
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+
+# Pull heavy data and models from DVC remote storage
+dvc pull
 ```
 
 ### 2. Launch Infrastructure (Label Studio)
