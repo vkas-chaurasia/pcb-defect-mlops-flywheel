@@ -67,7 +67,7 @@ jobs:
         echo "📡 MLflow Tracking URI: $MLFLOW_TRACKING_URI"
         dvc repro -f train
         
-        # 2. Execute the API-driven Auditor (Creates report.md)
+        # 2. Execute the API-driven Auditor (Creates report.md with local paths)
         dvc repro report
         
         # 3. Append Performance Comparison
@@ -75,8 +75,18 @@ jobs:
         echo -e "\n## Performance vs Main\n" >> report.md
         dvc metrics diff --md --all main >> report.md
         
-        # 4. Push official results to the vault
+        # 4. Publish Visuals to CML and Update Report
+        # This transforms local paths in report.md into public image URLs
+        for img in report_assets/*.png; do
+          if [ -f "$img" ]; then
+            URL=$(cml publish "$img")
+            # Replace the local path with the public URL in report.md
+            sed -i "s|report_assets/$(basename $img)|$URL|g" report.md
+          fi
+        done
+        
+        # 5. Push official results to the vault
         dvc push
         
-        # 5. Post the Unified High-Fidelity Report
+        # 6. Post the Unified High-Fidelity Report
         cml comment create --watermark-title="mlops-report" report.md
