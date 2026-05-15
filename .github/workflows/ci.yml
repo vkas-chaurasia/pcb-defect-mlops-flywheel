@@ -9,6 +9,9 @@ on:
 jobs:
   validate-pipeline:
     runs-on: self-hosted
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
     - name: Cleanup Locked Docker Folders
