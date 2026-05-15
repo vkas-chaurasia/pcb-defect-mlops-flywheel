@@ -32,6 +32,7 @@ jobs:
 
     - name: Install System Dependencies (macOS)
       run: |
+        pip3 install setuptools
         brew install pkg-config cairo pango libffi
 
     - name: Setup CML
