@@ -74,9 +74,8 @@ jobs:
         echo "The automated training run has completed successfully. Below is a detailed performance breakdown." >> report.md
         
         # Performance Diff
-        git fetch --depth=1 origin main:main
         echo "### 📈 Metrics vs Main" >> report.md
-        dvc metrics diff --md main >> report.md
+        dvc metrics diff --md origin/main >> report.md
         
         # Visual Artifacts
         if [ -f last_run_path.txt ]; then
