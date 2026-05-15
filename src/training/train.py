@@ -70,23 +70,21 @@ def main():
     # 1. Prep Data
     yaml_path = prepare_yolo_data(PROCESSED_DIR, YOLO_DIR, args.img_size)
 
-    # 2. MLflow Infrastructure Setup (Artifact Proxy Mode)
+    # 2. MLflow Infrastructure Setup (Environment-Aware)
     tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5555")
     exp_name = os.getenv("MLFLOW_EXPERIMENT_NAME", "pcb-defect-exploration")
-    
-    # Hide direct S3 access from the client to force Proxy Mode (High-Fidelity)
-    os.environ.pop("MLFLOW_S3_ENDPOINT_URL", None)
-    os.environ.pop("AWS_ACCESS_KEY_ID", None)
-    os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
     
     mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_experiment(exp_name)
     
-    # 3. Disable YOLO's internal noisy MLflow callback to avoid collisions
-    settings.update({"mlflow": False})
+    # Hide direct S3 access from the client to force Proxy Mode (High-Fidelity)
+    # This ensures YOLO uses the MLflow server's proxy for uploads.
+    os.environ.pop("MLFLOW_S3_ENDPOINT_URL", None)
+    os.environ.pop("AWS_ACCESS_KEY_ID", None)
+    os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
     
-    # Enable High-Fidelity Autologging
-    mlflow.autolog(log_models=True)
+    # 3. ENABLE YOLO's native MLflow integration (This restores artifacts/models)
+    settings.update({"mlflow": True})
 
     # 4. Initialize Model and Hardware
     model = YOLO(f"{args.model}.pt")
@@ -97,7 +95,8 @@ def main():
     else:
         device = 'cpu'
 
-    # 5. Execute Training within Official Run
+    # 5. Execute Training within a Manual Run for DNA Tagging
+    # YOLOv8 will automatically join this active run and log everything.
     with mlflow.start_run() as run:
         run_id = run.info.run_id
         run_name = run.info.run_name
