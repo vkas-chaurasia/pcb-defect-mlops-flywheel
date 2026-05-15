@@ -15,10 +15,11 @@ from ultralytics import settings
 from tqdm import tqdm
 
 # --- Configuration ---
-CLASS_NAMES = ["open", "short", "mousebite", "spur", "spurious_copper", "pin_hole"]
-PROCESSED_DIR = Path("data/processed")
-YOLO_DIR      = Path("data/yolo")
-RUNS_DIR      = Path("runs/train")
+PROJECT_ROOT  = Path(os.getcwd()).absolute()
+CLASS_NAMES   = ["open", "short", "mousebite", "spur", "spurious_copper", "pin_hole"]
+PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
+YOLO_DIR      = PROJECT_ROOT / "data" / "yolo"
+RUNS_DIR      = PROJECT_ROOT / "runs" / "detect"
 MLFLOW_URI    = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5555")
 
 # S3 Configuration is now handled by the MLflow Artifact Proxy (Server-side)
@@ -122,7 +123,7 @@ def main():
             device = 'cpu' # Fallback to CPU
             
         # Smart Cache: Check if training results already exist
-        yolo_run_dir = Path(f"runs/detect/pcb-defect-detection/{run_name}")
+        yolo_run_dir = RUNS_DIR / "pcb-defect-detection" / run_name
         results_csv = yolo_run_dir / "results.csv"
         
         if results_csv.exists():
@@ -138,7 +139,7 @@ def main():
                 epochs=args.epochs,
                 imgsz=args.img_size,
                 batch=args.batch,
-                project="pcb-defect-detection",
+                project=str(RUNS_DIR / "pcb-defect-detection"),
                 name=run_name,
                 exist_ok=True,
                 device=device
@@ -159,7 +160,7 @@ def main():
         print("Final training metrics logged to MLflow and metrics.json.")
 
         # Log the formal PyTorch model (enables "Register Model" button)
-        best_pt = Path(f"runs/detect/pcb-defect-detection/{run_name}/weights/best.pt")
+        best_pt = yolo_run_dir / "weights" / "best.pt"
 
         if best_pt.exists():
             import torch
@@ -186,7 +187,7 @@ def main():
 
         # Log all YOLO artifacts (plots, charts, labels, etc.)
         if yolo_run_dir.exists():
-            print("Uploading visual plots and charts to MLflow...")
+            print(f"Uploading visual plots and charts from {yolo_run_dir} to MLflow...")
             mlflow.log_artifacts(str(yolo_run_dir))
 
         print("Data profile and artifacts logged.")
