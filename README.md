@@ -109,7 +109,13 @@ Once we identify the best performing experiment, we apply it to our workspace:
 ```bash
 dvc exp apply <experiment_name>
 ```
-This updates our `params.yaml` and `dvc.lock` files with the winning configuration. We then commit these files to Git.
+This updates our `params.yaml` and `dvc.lock` files with the winning configuration. 
+
+Finally, we must push the heavy model artifacts to our shared remote storage (RustFS) so the rest of the team and CI/CD can access them:
+```bash
+dvc push
+```
+We then commit `params.yaml` and `dvc.lock` to Git.
 
 ### 2. CI/CD Validation
 Our automated CI/CD pipelines (e.g., GitHub Actions) do *not* run multiple experiments. Instead, they use:
