@@ -21,11 +21,8 @@ CLASS_NAMES   = ["open", "short", "mousebite", "spur", "spurious_copper", "pin_h
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 YOLO_DIR      = PROJECT_ROOT / "data" / "yolo"
 RUNS_DIR      = PROJECT_ROOT / "runs" / "detect"
-# Detect environment: Use Prod (5555) in CI/CD, Dev (5556) for local exploration
-if os.getenv("GITHUB_ACTIONS") == "true":
-    DEFAULT_MLFLOW_URI = "http://localhost:5555"
-else:
-    DEFAULT_MLFLOW_URI = "http://localhost:5556"
+# Detect environment: Always use port 5555 for the Smart MLflow service
+DEFAULT_MLFLOW_URI = "http://localhost:5555"
 
 MLFLOW_URI = os.getenv("MLFLOW_TRACKING_URI", DEFAULT_MLFLOW_URI)
 
@@ -102,9 +99,12 @@ def main():
     # MLflow Setup
     print(f"Connecting to MLflow at {MLFLOW_URI}...")
     mlflow.set_tracking_uri(MLFLOW_URI)
-    mlflow.set_experiment("pcb-defect-detection")
-    print("Connected to MLflow Experiment: pcb-defect-detection")
-    exp = mlflow.get_experiment_by_name("pcb-defect-detection")
+    # Use distinct experiments for local exploration vs. official production runs
+    experiment_name = "PCB-Production" if os.getenv("GITHUB_ACTIONS") == "true" else "PCB-Exploration"
+    mlflow.set_experiment(experiment_name)
+    print(f"Logging to Experiment: {experiment_name}")
+    print(f"Connected to MLflow Experiment: {experiment_name}")
+    exp = mlflow.get_experiment_by_name(experiment_name)
 
     # Disable YOLO's internal MLflow callback to prevent duplicate runs
     from ultralytics import YOLO, settings

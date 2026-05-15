@@ -1,9 +1,8 @@
 services:
-  # Production MLflow (Only started in CI/CD via --profile prod)
-  mlflow_prod:
+  # Unified Enterprise MLflow Instance
+  mlflow:
     image: ghcr.io/mlflow/mlflow:latest
-    container_name: mlflow_prod
-    profiles: ["prod"]
+    container_name: mlflow
     ports:
       - "5555:5000"
     working_dir: /mlflow
@@ -13,31 +12,13 @@ services:
       - MLFLOW_S3_ENDPOINT_URL=http://rustfs:9000
       - MLFLOW_S3_IGNORE_TLS=true
     volumes:
-      - ../mlflow-history-prod:/mlflow/data
+      - ../mlflow-history:/mlflow/data
     command: mlflow server --host 0.0.0.0 --backend-store-uri /mlflow/data --default-artifact-root mlflow-artifacts:/ --serve-artifacts
 
-  # Development MLflow (Only started locally via --profile local)
-  mlflow_dev:
-    image: ghcr.io/mlflow/mlflow:latest
-    container_name: mlflow_dev
-    profiles: ["local"]
-    ports:
-      - "5556:5000"
-    working_dir: /mlflow
-    environment:
-      - AWS_ACCESS_KEY_ID=rustfsadmin
-      - AWS_SECRET_ACCESS_KEY=rustfsadmin
-      - MLFLOW_S3_ENDPOINT_URL=http://rustfs:9000
-      - MLFLOW_S3_IGNORE_TLS=true
-    volumes:
-      - ../local-mlflow-history:/mlflow/data
-    command: mlflow server --host 0.0.0.0 --backend-store-uri /mlflow/data --default-artifact-root mlflow-artifacts:/ --serve-artifacts
-
-  # Human-in-the-Loop Labeling (Only started locally via --profile local)
+  # Human-in-the-Loop Labeling
   label-studio:
     image: heartexlabs/label-studio:latest
     container_name: label-studio
-    profiles: ["local"]
     ports:
       - "8080:8080"
     volumes:
@@ -48,7 +29,7 @@ services:
       - LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true
       - LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=/label-studio/data/projects-data
 
-  # S3 Compatible Storage (Always On - Shared)
+  # S3 Compatible Storage (RustFS)
   rustfs:
     image: minio/minio:latest
     container_name: rustfs

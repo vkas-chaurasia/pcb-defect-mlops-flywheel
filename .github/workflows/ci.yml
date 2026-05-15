@@ -46,15 +46,10 @@ jobs:
 
     - name: Clean and Start Infrastructure
       run: |
-        # Only stop and recreate the PROD container, leave everything else alone!
-        docker compose -f docker/docker-compose.yml --profile prod stop mlflow_prod || true
-        docker compose -f docker/docker-compose.yml --profile prod rm -f mlflow_prod || true
-        
-        mkdir -p mlflow-history-prod local-mlflow-history
-        chmod -R 777 mlflow-history-prod local-mlflow-history
-        
-        # This will start mlflow_prod and ensure rustfs is running without killing your Dev work
-        docker compose -f docker/docker-compose.yml --profile prod up -d
+        docker compose -f docker/docker-compose.yml down -v || true
+        mkdir -p mlflow-history
+        chmod -R 777 mlflow-history
+        docker compose -f docker/docker-compose.yml up -d
         echo "Waiting for MLflow API and RustFS to be ready..."
         for i in {1..30}; do
           if curl -s http://localhost:5555/api/2.0/mlflow/experiments/list > /dev/null && curl -s http://localhost:9000/minio/health/live > /dev/null; then
@@ -65,7 +60,7 @@ jobs:
           sleep 5
         done
         echo "Infrastructure timed out. Docker logs:"
-        docker logs mlflow_prod
+        docker logs mlflow
         exit 1
 
     - name: Pull Data from DVC
@@ -77,6 +72,8 @@ jobs:
 
     - name: Reproduce Pipeline
       env:
+        # Detect environment: Always use port 5555 for the Smart MLflow service
+        DEFAULT_MLFLOW_URI: "http://localhost:5555"
         MLFLOW_TRACKING_URI: http://localhost:5555
         MLFLOW_S3_ENDPOINT_URL: http://localhost:9000
         AWS_ACCESS_KEY_ID: rustfsadmin
