@@ -22,7 +22,10 @@ PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 YOLO_DIR      = PROJECT_ROOT / "data" / "yolo"
 RUNS_DIR      = PROJECT_ROOT / "runs" / "detect"
 # Detect environment: Use Prod (5555) in CI/CD, Local (5556) for exploration
-DEFAULT_MLFLOW_URI = "http://localhost:5555"
+if os.getenv("GITHUB_ACTIONS") == "true":
+    DEFAULT_MLFLOW_URI = "http://localhost:5555"
+else:
+    DEFAULT_MLFLOW_URI = "http://localhost:5556"
 
 MLFLOW_URI = os.getenv("MLFLOW_TRACKING_URI", DEFAULT_MLFLOW_URI)
 
@@ -185,8 +188,8 @@ def main():
                 f.write(f"RUN_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}/runs/{run_id}\n")
                 f.write(f"EXP_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}\n")
 
-        # Ensure DVC sees the history folder exists (to avoid errors)
-        os.makedirs(PROJECT_ROOT / "mlflow-history", exist_ok=True)
+        # Ensure DVC sees the production history folder exists (to avoid errors)
+        os.makedirs(PROJECT_ROOT / "mlflow-history-prod", exist_ok=True)
 
     print(f"\nTraining and Logging Complete. Run ID: {run_id}")
 
