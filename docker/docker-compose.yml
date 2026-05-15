@@ -21,8 +21,14 @@ services:
       - AWS_SECRET_ACCESS_KEY=rustfsadmin
       - MLFLOW_S3_ENDPOINT_URL=http://rustfs:9000
       - MLFLOW_S3_IGNORE_TLS=true
-    # --serve-artifacts enables the artifact proxy (High-Fidelity Mode)
-    command: mlflow server --host 0.0.0.0 --backend-store-uri sqlite:///mlflow_prod.db --default-artifact-root s3://mlflow-prod-artifacts/ --serve-artifacts
+    # --serve-artifacts enables the master-grade artifact proxy
+    command: >
+      mlflow server 
+      --host 0.0.0.0 
+      --backend-store-uri postgresql://mlflow:mlflow@db/mlflow 
+      --default-artifact-root mlflow-artifacts:/ 
+      --artifacts-destination s3://mlflow-prod-artifacts/
+      --serve-artifacts
 
   # Human-in-the-Loop Labeling
   label-studio:
