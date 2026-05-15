@@ -90,7 +90,7 @@ def main():
 
     # MLflow Setup
     mlflow.set_tracking_uri(MLFLOW_URI)
-    mlflow.set_experiment("pcb-defect-detection")
+    exp = mlflow.set_experiment("pcb-defect-detection")
 
     # Disable YOLO's internal MLflow callback to prevent duplicate runs
     settings.update({"mlflow": False})
@@ -194,6 +194,13 @@ def main():
             with open("last_run_path.txt", "w") as f:
                 f.write(str(yolo_run_dir))
 
+        # Export URLs for CI/CD reporting
+        with open("mlflow_urls.txt", "w") as f:
+            f.write(f"RUN_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}/runs/{run.info.run_id}\n")
+            f.write(f"EXP_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}\n")
+
+        print(f"🏃 View run {run_name} at: {MLFLOW_URI}/#/experiments/{exp.experiment_id}/runs/{run.info.run_id}")
+        print(f"🧪 View experiment at: {MLFLOW_URI}/#/experiments/{exp.experiment_id}")
         print("Data profile and artifacts logged.")
 
     print(f"\nTraining Complete. View logs at: {MLFLOW_URI}")
