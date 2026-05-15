@@ -113,4 +113,6 @@ Our automated CI/CD pipelines (e.g., GitHub Actions) do *not* run multiple exper
 ```bash
 dvc repro
 ```
-By reading the committed `params.yaml` and `dvc.lock`, the CI/CD pipeline runs only the single, approved configuration to validate the build and verify metrics before code is merged.
+By reading the committed `params.yaml` and `dvc.lock`, the CI/CD pipeline knows exactly which configuration is approved. 
+
+**Crucially, it does not retrain the model.** Because we use a shared DVC remote cache (our RustFS server), when CI/CD runs `dvc repro`, DVC detects that the training step has already been computed for these exact parameters and code. It skips the expensive training process entirely and simply downloads the cached model artifacts, saving massive amounts of compute time and money.
