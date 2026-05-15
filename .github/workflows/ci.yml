@@ -39,9 +39,13 @@ jobs:
     - name: Ensure Infrastructure is Running
       run: docker compose -f docker/docker-compose.yml up -d
 
-    - name: Configure DVC and Reproduce Pipeline
+    - name: Pull Data from DVC
+      run: dvc pull -f
+
+    - name: Reproduce Pipeline
       run: |
-        dvc repro --pull -f
+        dvc repro
+        dvc push
 
     - name: Setup CML (Continuous Machine Learning)
       uses: iterative/setup-cml@v2
