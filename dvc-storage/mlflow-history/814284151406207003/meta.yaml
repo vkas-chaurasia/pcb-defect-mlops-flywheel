@@ -1,0 +1,8 @@
+artifact_location: s3://pcb-experiment-logs/814284151406207003
+creation_time: 1778855373879
+experiment_id: '814284151406207003'
+last_update_time: 1778855373879
+lifecycle_stage: active
+name: pcb-defect-detection
+trace_location: null
+workspace: default
