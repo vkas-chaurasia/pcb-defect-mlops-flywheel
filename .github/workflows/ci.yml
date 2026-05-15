@@ -61,7 +61,7 @@ jobs:
         AWS_ACCESS_KEY_ID: rustfsadmin
         AWS_SECRET_ACCESS_KEY: rustfsadmin
       run: |
-        dvc repro
+        dvc repro -f
         dvc push
 
     - name: Generate Metrics Report and Post to GitHub PR
