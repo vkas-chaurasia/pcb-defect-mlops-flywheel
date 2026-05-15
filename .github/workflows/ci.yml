@@ -97,4 +97,5 @@ jobs:
         echo "---" >> report.md
         echo "🔍 View full logs and downloadable models in the [MLflow Dashboard](http://localhost:5555)." >> report.md
         
-        cml comment create report.md
+        # Use a unique ID to update the same comment instead of creating duplicates
+        cml comment create --id="mlops-report" report.md
