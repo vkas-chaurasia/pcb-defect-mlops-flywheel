@@ -1,8 +1,9 @@
 services:
-  # Production MLflow (Shared / CI/CD)
+  # Production MLflow (Only started in CI/CD via --profile prod)
   mlflow_prod:
     image: ghcr.io/mlflow/mlflow:latest
     container_name: mlflow_prod
+    profiles: ["prod"]
     ports:
       - "5555:5000"
     working_dir: /mlflow
@@ -15,7 +16,7 @@ services:
       - ../mlflow-history-prod:/mlflow/data
     command: mlflow server --host 0.0.0.0 --backend-store-uri /mlflow/data --default-artifact-root mlflow-artifacts:/ --serve-artifacts
 
-  # Development MLflow (Local Private Exploration)
+  # Development MLflow (Default - Started locally)
   mlflow_dev:
     image: ghcr.io/mlflow/mlflow:latest
     container_name: mlflow_dev
@@ -31,7 +32,7 @@ services:
       - ../local-mlflow-history:/mlflow/data
     command: mlflow server --host 0.0.0.0 --backend-store-uri /mlflow/data --default-artifact-root mlflow-artifacts:/ --serve-artifacts
 
-  # Human-in-the-Loop Labeling
+  # Human-in-the-Loop Labeling (Default - Started locally)
   label-studio:
     image: heartexlabs/label-studio:latest
     container_name: label-studio
@@ -45,7 +46,7 @@ services:
       - LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true
       - LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=/label-studio/data/projects-data
 
-  # S3 Compatible Storage (RustFS)
+  # S3 Compatible Storage (Default - Shared)
   rustfs:
     image: minio/minio:latest
     container_name: rustfs
