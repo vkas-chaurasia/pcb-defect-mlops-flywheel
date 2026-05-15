@@ -232,4 +232,4 @@ data/yolo
 models
 mlruns
 dvc/tests/
-.rustfs.sys
+dvc-storage/
