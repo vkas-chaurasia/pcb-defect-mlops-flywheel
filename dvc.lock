@@ -34,19 +34,20 @@ stages:
     outs:
     - path: data/yolo
       hash: md5
-      md5: f0604f89117ef2d37535c225af204b2c.dir
-      size: 23564484
+      md5: 5192e090d09a2281740964559fcdc76d.dir
+      size: 23624221
       nfiles: 2993
     - path: metrics.json
       hash: md5
       md5: a6d133751acb46b5ff03700045a894c5
       size: 224
-    - path: mlflow_run.txt
+    - path: mlflow-history
       hash: md5
-      md5: 3eff9c3dc0c7a0e5be1214058798f26e
-      size: 230
+      md5: 46816ce857326453f3ce78e4f0ef5f4f.dir
+      size: 43561698
+      nfiles: 55
     - path: runs
       hash: md5
-      md5: 30af6c90ed70a57e59f2a218b56df8f3.dir
-      size: 15227065
+      md5: 7d1bc4105417d56678beadd990c7a196.dir
+      size: 15227842
       nfiles: 21
