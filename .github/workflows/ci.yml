@@ -52,7 +52,7 @@ jobs:
         docker compose -f docker/docker-compose.yml up -d
         echo "Waiting for MLflow API and RustFS to be ready..."
         for i in {1..30}; do
-          if curl -sf http://localhost:5555/api/2.0/mlflow/experiments/list > /dev/null && curl -sf http://localhost:9000/minio/health/live > /dev/null; then
+          if curl -sf http://localhost:5555/health > /dev/null && curl -sf http://localhost:9000/minio/health/live > /dev/null; then
             echo "Infrastructure is fully ready!"
             exit 0
           fi
