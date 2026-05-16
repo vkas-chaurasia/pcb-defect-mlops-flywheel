@@ -1,116 +1,104 @@
-# PCB Defect Detection: MLOps Flywheel
+# 🔍 PCB Defect Detection: The MLOps Flywheel 🎡
 
-This repository implements an end-to-end MLOps pipeline for automated PCB defect detection. The architecture integrates model training, data versioning, and automated reporting into a high-fidelity feedback loop.
-
----
-
-## Infrastructure Overview
-
-The pipeline utilizes a containerized infrastructure managed via Docker Compose:
-
-*   **Label Studio**: Human-in-the-loop data annotation and active learning.
-*   **MLflow**: Centralized experiment tracking and model registry.
-*   **RustFS**: S3-compatible object storage serving as the DVC remote cache.
-*   **DVC**: Data and model versioning with automated pipeline reproduction.
-*   **CML**: Continuous Machine Learning for visual reporting in GitHub Pull Requests.
+This repository implements a production-grade MLOps ecosystem for automated PCB (Printed Circuit Board) defect detection. By integrating real-time inference, human-in-the-loop annotation, and automated CI/CD auditing, this project creates a "flywheel" effect—where every run makes the model smarter and the pipeline more robust.
 
 ---
 
-## ⚠️ Important: Infrastructure Prerequisite
+## 🛠️ The Tech Stack
 
-This project uses a self-hosted CI/CD architecture. Before running any training or triggering a GitHub Action, you **MUST** ensure the local infrastructure is running on your Mac:
+| Component | Technology | Role |
+| :--- | :--- | :--- |
+| **Detection** | [YOLOv8](https://ultralytics.com/) | State-of-the-art object detection for 6 defect types. |
+| **Inference API** | [FastAPI](https://fastapi.tiangolo.com/) | High-performance model serving (Port 8000). |
+| **Frontend** | [Streamlit](https://streamlit.io/) | Interactive sandbox for real-time defect analysis (Port 8501). |
+| **Orchestration** | [Docker Compose](https://www.docker.com/) | Unified management of all infrastructure services. |
+| **Tracking** | [MLflow](https://mlflow.org/) | Dual-instance tracking for Sandbox (5555) and Official (5556) runs. |
+| **Annotation** | [Label Studio](https://labelstud.io/) | Active learning and dataset refinement (Port 8080). |
+| **Versioning** | [DVC](https://dvc.org/) | Large data and model versioning with S3-compatible backends. |
+| **Storage** | [RustFS](https://github.com/cloud-native-ml/rustfs) | Local S3-compatible object storage for model vaults. |
+| **Reporting** | [CML](https://cml.dev/) | Automated performance reporting in GitHub PRs. |
+
+---
+
+## ⚠️ Infrastructure Prerequisite
+
+This project is built on a **Shared Infrastructure Model**. Before running any scripts or triggering CI/CD, you **MUST** have the Docker services running on the host machine:
 
 ```bash
+# Launch the Flywheel Infrastructure
 docker compose -f docker/docker-compose.yml up -d
 ```
 
-The CI/CD pipeline performs a health check on ports **5556** (MLflow-Official) and **9000** (RustFS). If these services are not reachable, the pipeline will fail.
+*Note: The self-hosted CI/CD runner communicates with these containers via `localhost`. If they are not running, the pipeline will fail its health checks.*
 
 ---
 
-## Quick Start (Onboarding)
-
-Follow these steps to initialize the environment and synchronize the latest model artifacts.
+## 🚀 Onboarding: Quick Start
 
 ### 1. Environment Setup
 ```bash
-# Clone the repository
+# Clone and Enter
 git clone <repository_url>
 cd pcb-defect-mlops-flywheel
 
-# Configure environment variables
-cp .env.example .env
+# Initialize Virtual Environment (using UV or Pip)
+uv sync  # Recommended
+# OR: python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
 
-# Initialize virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
-# Synchronize data and models from remote storage
+# Synchronize Data & Models
 dvc pull
 ```
 
-### 2. Launch Infrastructure
-```bash
-docker compose -f docker/docker-compose.yml up -d
-```
-Access points:
-*   Label Studio: http://localhost:8080 (admin@example.com / mlops123)
-*   MLflow: http://localhost:5555
-*   RustFS Console: http://localhost:9001
+### 2. Access the Ecosystem
+Once Docker is up, your ecosystem is live at:
+- **FastAPI Docs**: http://localhost:8000/docs
+- **Streamlit UI**: http://localhost:8501
+- **MLflow (Sandbox)**: http://localhost:5555
+- **MLflow (Official)**: http://localhost:5556
+- **Label Studio**: http://localhost:8080 (Admin: `admin@example.com` / `mlops123`)
 
 ---
 
-## The MLOps Workflow
+## 🔄 The Flywheel Workflow
 
-### 1. Local Development and Training
-We use DVC to manage the reproduction of the training pipeline.
+### Phase 1: Annotation & Active Learning
+1. Upload new PCB images to Label Studio.
+2. Use the **Active Learning Loop** in the Streamlit UI to trigger batch inference on "unseen" images.
+3. Sync labels back to the repo using `src/utils/sync_labels.py`.
 
+### Phase 2: Training & Validation
+Execute the pipeline with DVC. This ensures every run is reproducible and tracked.
 ```bash
-# Execute the training pipeline
 dvc repro
 ```
+- **Local Dev**: Logs results to Port 5555.
+- **CI/CD**: When you push to a PR, the runner executes a "Showcase" run on Port 5556 and posts a visual report (Confusion Matrix, F1-Curves) directly to your GitHub PR comment.
 
-**What happens behind the scenes:**
-1.  **Data Prep**: Raw data is processed into YOLOv8 format.
-2.  **Training**: The model is trained. Performance metrics are saved to `metrics.json`.
-3.  **Logging**: The script logs all parameters, metrics, and visual artifacts to MLflow.
-4.  **Mapping**: A specialized metadata file, `mlflow_run.txt`, is generated to map the current Git/DVC state to the specific MLflow Run ID.
-
-### 2. Versioning and Promotion
-To share results with the team and activate CI/CD validation:
-
+### Phase 3: Serving & Monitoring
+Deploy your champion model to the FastAPI server:
 ```bash
-# Snapshot the results and push to remote storage
-dvc push
-git add dvc.lock mlflow_run.txt metrics.json
-git commit -m "feat: optimize hyperparameters for pcb-detection"
-git push origin <branch_name>
+# Serves the champion model from MLflow registry or local weights
+python src/serving/serve.py --weights models/best.pt
 ```
 
 ---
 
-## CI/CD Validation Architecture
-
-Our GitHub Actions pipeline follows a "Pure Promotion" model to ensure absolute traceability and computational efficiency.
-
-### Dual-Mode Execution
-The CI/CD runner executes `dvc repro` in a clean environment:
-
-1.  **Cached Mode (Success Path)**: If you have already trained and pushed the results locally, DVC identifies that the code and parameters have not changed. It skips the training process and simply downloads your `runs/` folder and `mlflow_run.txt` from RustFS.
-2.  **Validation Mode**: The pipeline reads the downloaded `mlflow_run.txt` and uses its metadata to generate a deep-linked report in your Pull Request.
-
-### Visual Reporting
-Every Pull Request automatically receives a performance report containing:
-*   **Metrics vs Main**: A side-by-side comparison of accuracy against the production baseline.
-*   **Deep Links**: Direct URLs to the original MLflow experiment and specific run.
-*   **Visual Analysis**: Loss curves, F1-curves, and confusion matrices embedded directly in the PR comment.
+## 📂 Repository Structure
+- `src/app/`: Streamlit dashboard for real-time detection.
+- `src/serving/`: FastAPI inference service logic.
+- `src/training/`: YOLOv8 training and evaluation scripts.
+- `src/utils/`: Label Studio sync and batch inference helpers.
+- `docker/`: Unified Docker Compose configuration.
+- `mlflow-official-history/`: **Committed** history of team-verified runs.
+- `mlflow-history/`: **Private** local sandbox history (ignored by Git).
 
 ---
 
-## Tech Stack
-*   **Detection**: YOLOv8 (Ultralytics)
-*   **Orchestration**: Docker Compose, GitHub Actions
-*   **Storage**: DVC, RustFS (S3)
-*   **Tracking**: MLflow
-*   **Reporting**: CML (Iterative)
+## 🛡️ Best Practices
+- **Never Commit `data/raw`**: Always use `dvc push` to store large images in RustFS.
+- **Official Runs**: Only the CI/CD pipeline should log to Port 5556 to keep the "Official Showroom" clean.
+- **PR Reports**: Always review the CML report in your Pull Request before merging to `main`.
+
+---
+**Developed for the ZHAW MLOps Course (Spring 2026)**
+🏆 *Stabilizing the Flywheel, one PCB at a time.*
