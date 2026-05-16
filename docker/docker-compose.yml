@@ -3,6 +3,7 @@ services:
   mlflow:
     image: ghcr.io/mlflow/mlflow:latest
     container_name: mlflow
+    user: "501:20"
     ports:
       - "5555:5000"
     working_dir: /mlflow/data
