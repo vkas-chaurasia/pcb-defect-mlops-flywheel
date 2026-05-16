@@ -88,10 +88,10 @@ jobs:
         echo "MLflow Tracking URI: $MLFLOW_TRACKING_URI"
         echo "S3 Endpoint: $MLFLOW_S3_ENDPOINT_URL"
         rm -f dvc.lock .dvc/tmp/lock || true
-        dvc repro
-        # Persist the official run record in Git
+        # Persist the official run record in Git and push back to PR
         git add mlflow-official-history
-        git commit -m "CI: Record official training run metadata" || true
+        git commit -m "CI: Record official training run metadata [skip ci]" || true
+        git push origin ${{ github.head_ref || github.ref_name }}
         dvc push
 
     - name: Generate Metrics Report and Post to GitHub PR
