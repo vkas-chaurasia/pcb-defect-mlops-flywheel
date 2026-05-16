@@ -27,7 +27,7 @@ jobs:
       with:
         fetch-depth: 0
         ref: ${{ github.head_ref || github.ref_name }}
-        clean: false
+        clean: true
 
     - name: Setup Safe CI Environment (macOS)
       run: |
@@ -57,8 +57,8 @@ jobs:
         mkdir -p mlflow-history
         docker compose -f docker/docker-compose.yml up -d
         echo "Waiting for MLflow API and RustFS to be ready..."
-        for i in {1..30}; do
-          if curl -sf http://localhost:5555/health > /dev/null && curl -sf http://localhost:9000/minio/health/live > /dev/null; then
+        for i in {1..40}; do
+          if curl -sf http://localhost:5555/ > /dev/null && curl -sf http://localhost:9000/minio/health/live > /dev/null; then
             echo "Infrastructure is fully ready!"
             exit 0
           fi
@@ -133,12 +133,3 @@ jobs:
         
         # Update existing comment or create new one with watermark to prevent duplicates
         cml comment create --watermark-title="mlops-report" report.md
-
-    - name: Commit and Push Simulation Vault
-      run: |
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
-        # Capture the new DVC vault data (which now includes the mlflow history)
-        git add dvc-storage .gitignore dvc.lock mlflow_run.txt
-        git commit -m "MLOps: Capture CI/CD experiment in Simulation Vault [skip ci]" || echo "No changes to commit"
-        git push origin HEAD:${{ github.head_ref || github.ref_name }}
