@@ -44,10 +44,10 @@ jobs:
         pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Clean and Start Infrastructure
+    - name: Ensure Infrastructure is Running
       run: |
-        # Stop and remove only the containers, PRESERVE the data!
-        docker compose -f docker/docker-compose.yml down --remove-orphans || true
+        # Don't stop anything! Just make sure everything is up.
+        # Docker Compose will skip starting if already running.
         # Only create if it doesn't exist, never overwrite
         mkdir -p mlflow-history dvc-storage
         docker compose -f docker/docker-compose.yml up -d
