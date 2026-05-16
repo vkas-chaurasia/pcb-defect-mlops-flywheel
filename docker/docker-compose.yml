@@ -13,7 +13,7 @@ services:
       - MLFLOW_S3_IGNORE_TLS=true
     volumes:
       - ../mlflow-history:/mlflow/data
-    command: mlflow server --host 0.0.0.0 --backend-store-uri /mlflow/data --default-artifact-root mlflow-artifacts:/ --serve-artifacts
+    command: mlflow server --host 0.0.0.0 --backend-store-uri sqlite:////mlflow/data/mlflow.db --default-artifact-root mlflow-artifacts:/ --serve-artifacts
 
   # Human-in-the-Loop Labeling
   label-studio:
