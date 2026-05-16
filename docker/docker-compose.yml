@@ -5,7 +5,7 @@ services:
     container_name: mlflow
     ports:
       - "5555:5000"
-    working_dir: /mlflow
+    working_dir: /mlflow/data
     environment:
       - AWS_ACCESS_KEY_ID=rustfsadmin
       - AWS_SECRET_ACCESS_KEY=rustfsadmin
@@ -13,7 +13,7 @@ services:
       - MLFLOW_S3_IGNORE_TLS=true
     volumes:
       - ../mlflow-history:/mlflow/data
-    command: mlflow server --host 0.0.0.0 --backend-store-uri sqlite:////mlflow/data/mlflow.db --default-artifact-root mlflow-artifacts:/ --serve-artifacts
+    command: mlflow server --host 0.0.0.0 --backend-store-uri sqlite:///mlflow.db --default-artifact-root mlflow-artifacts:/ --serve-artifacts
 
   # Human-in-the-Loop Labeling
   label-studio:

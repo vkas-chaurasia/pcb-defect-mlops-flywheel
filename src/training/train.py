@@ -14,6 +14,10 @@ import mlflow.pytorch
 import mlflow.data
 from ultralytics import settings
 from tqdm import tqdm
+from dotenv import load_dotenv
+
+# Load local .env if present
+load_dotenv()
 
 # --- Configuration ---
 PROJECT_ROOT  = Path(os.getcwd()).absolute()
@@ -96,10 +100,9 @@ def main():
     # MLflow Setup
     print(f"Connecting to MLflow at {MLFLOW_URI}...")
     mlflow.set_tracking_uri(MLFLOW_URI)
-    # Use distinct experiments for local exploration vs. official production runs
-    experiment_name = "PCB-Production" if os.getenv("GITHUB_ACTIONS") == "true" else "PCB-Exploration"
+    # Unified experiment for both local and production runs
+    experiment_name = "pcb-defect-detection"
     mlflow.set_experiment(experiment_name)
-    print(f"Logging to Experiment: {experiment_name}")
     print(f"Connected to MLflow Experiment: {experiment_name}")
     exp = mlflow.get_experiment_by_name(experiment_name)
 
