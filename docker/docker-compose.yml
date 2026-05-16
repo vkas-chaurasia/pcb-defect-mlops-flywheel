@@ -16,6 +16,23 @@ services:
       - ../mlflow-history:/mlflow/data
     command: mlflow server --host 0.0.0.0 --backend-store-uri sqlite:////mlflow/data/mlflow.db --default-artifact-root mlflow-artifacts:/ --serve-artifacts
 
+  # Official MLflow for Team/Professor
+  mlflow-official:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: mlflow-official
+    user: "501:20"
+    ports:
+      - "5556:5000"
+    working_dir: /mlflow/data
+    environment:
+      - AWS_ACCESS_KEY_ID=rustfsadmin
+      - AWS_SECRET_ACCESS_KEY=rustfsadmin
+      - MLFLOW_S3_ENDPOINT_URL=http://rustfs:9000
+      - MLFLOW_S3_IGNORE_TLS=true
+    volumes:
+      - ../mlflow-official-history:/mlflow/data
+    command: mlflow server --host 0.0.0.0 --backend-store-uri sqlite:////mlflow/data/mlflow.db --default-artifact-root mlflow-artifacts:/ --serve-artifacts
+
   # Human-in-the-Loop Labeling
   label-studio:
     image: heartexlabs/label-studio:latest

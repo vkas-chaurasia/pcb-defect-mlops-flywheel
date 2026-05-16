@@ -4,4 +4,14 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "mlflow>=2.10.0",
+    "opencv-python>=4.8.0",
+    "ultralytics>=8.1.0",
+    "dvc[s3]>=3.0.0",
+    "python-dotenv>=1.0.0",
+    "tqdm>=4.66.0",
+    "numpy>=1.24.0",
+    "torch>=2.0.0",
+    "torchvision>=0.15.0"
+]

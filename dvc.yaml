@@ -14,9 +14,6 @@ stages:
       - src/training/train.py
     outs:
       - data/yolo
-      - runs
-      - mlflow-history:
-          persist: true
     metrics:
       - metrics.json:
           cache: false

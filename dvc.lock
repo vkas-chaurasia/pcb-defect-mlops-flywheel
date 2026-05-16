@@ -20,7 +20,7 @@ stages:
       size: 22480035
       nfiles: 4
   train:
-    cmd: python3 src/training/train.py --epochs 1 --img-size 224 --batch 16
+    cmd: python3 src/training/train.py --epochs 2 --img-size 224 --batch 16
     deps:
     - path: data/processed
       hash: md5
@@ -34,20 +34,10 @@ stages:
     outs:
     - path: data/yolo
       hash: md5
-      md5: 5192e090d09a2281740964559fcdc76d.dir
-      size: 23624221
+      md5: f0604f89117ef2d37535c225af204b2c.dir
+      size: 23564484
       nfiles: 2993
     - path: metrics.json
       hash: md5
-      md5: a6d133751acb46b5ff03700045a894c5
-      size: 224
-    - path: mlflow-history
-      hash: md5
-      md5: 46816ce857326453f3ce78e4f0ef5f4f.dir
-      size: 43561698
-      nfiles: 55
-    - path: runs
-      hash: md5
-      md5: 7d1bc4105417d56678beadd990c7a196.dir
-      size: 15227842
-      nfiles: 21
+      md5: 56683daca568e71ebd7f20f898abe4d1
+      size: 218

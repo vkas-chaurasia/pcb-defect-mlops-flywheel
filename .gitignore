@@ -238,7 +238,8 @@ mlruns
 /dvc-storage/.minio.sys
 /dvc-storage/tmp
 /dvc-storage/multipart
-/runs
+# MLflow History (Local Sandbox Only)
 /mlflow-history
-/mlartifacts
 mlflow_run.txt
+/mlartifacts
+last_run_path.txt

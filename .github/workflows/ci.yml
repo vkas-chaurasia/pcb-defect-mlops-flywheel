@@ -26,8 +26,8 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+        clean: false
         ref: ${{ github.head_ref || github.ref_name }}
-        clean: true
 
     - name: Setup Safe CI Environment (macOS)
       run: |
@@ -49,25 +49,17 @@ jobs:
         pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Ensure Infrastructure is Running
+    - name: Infrastructure Health Check
       run: |
-        # Don't stop anything! Just make sure everything is up.
-        # Docker Compose will skip starting if already running.
-        # Only create if it doesn't exist, never overwrite
-        mkdir -p mlflow-history
-        docker compose -f docker/docker-compose.yml up -d
-        echo "Waiting for MLflow API and RustFS to be ready..."
-        for i in {1..40}; do
-          if curl -sf http://localhost:5555/ > /dev/null && curl -sf http://localhost:9000/health > /dev/null; then
-            echo "Infrastructure is fully ready!"
-            exit 0
-          fi
-          echo "...still waiting for services..."
-          sleep 5
-        done
-        echo "Infrastructure timed out. Docker logs:"
-        docker logs mlflow
-        exit 1
+        echo "Checking if MLOps Flywheel (Docker) is running on Mac..."
+        # Check MLflow (Official) on 5556 and RustFS on 9000
+        if curl -sf http://localhost:5556/ > /dev/null && curl -sf http://localhost:9000/health > /dev/null; then
+          echo "Infrastructure is HEALTHY! Proceeding with pipeline."
+        else
+          echo "ERROR: Infrastructure is NOT running!"
+          echo "Please ensure 'docker compose -f docker/docker-compose.yml up -d' is running on your Mac."
+          exit 1
+        fi
 
     - name: Pull Data from DVC
       env:
@@ -78,24 +70,28 @@ jobs:
 
     - name: Reproduce Pipeline
       env:
-        # Detect environment: Always use port 5555 for the Smart MLflow service
-        DEFAULT_MLFLOW_URI: "http://localhost:5555"
-        MLFLOW_TRACKING_URI: http://localhost:5555
+        # CI/CD always logs to the Official Team Instance
+        DEFAULT_MLFLOW_URI: "http://localhost:5556"
+        MLFLOW_TRACKING_URI: http://localhost:5556
         MLFLOW_S3_ENDPOINT_URL: http://localhost:9000
         AWS_ACCESS_KEY_ID: rustfsadmin
         AWS_SECRET_ACCESS_KEY: rustfsadmin
       run: |
         echo "MLflow Tracking URI: $MLFLOW_TRACKING_URI"
-        echo "S3 Endpoint: $MLFLOW_S3_ENDPOINT_URL"
         rm -f dvc.lock .dvc/tmp/lock || true
         dvc repro
-        dvc commit mlflow-history || true
         dvc push
 
     - name: Generate Metrics Report and Post to GitHub PR
       env:
         REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        # Only generate report if the training stage actually ran (detected by mlflow_run.txt presence/update)
+        if [ ! -f mlflow_run.txt ]; then
+          echo "Training was skipped by DVC (cached). Skipping report generation."
+          exit 0
+        fi
+
         echo "## MLOps Flywheel: Training Report" > report.md
         echo "The automated training run has completed successfully. Below is a detailed performance breakdown." >> report.md
         
@@ -105,13 +101,11 @@ jobs:
         dvc metrics diff --md --all main >> report.md
         
         # Deep Links to the Original MLflow Run
-        if [ -f mlflow_run.txt ]; then
-          source mlflow_run.txt
-          echo "---" >> report.md
-          echo "* [View Original Training Run]($RUN_URL)" >> report.md
-          echo "* [View Full Experiment Suite]($EXP_URL)" >> report.md
-          echo "---" >> report.md
-        fi
+        source mlflow_run.txt
+        echo "---" >> report.md
+        echo "* [View Original Training Run]($RUN_URL)" >> report.md
+        echo "* [View Full Experiment Suite]($EXP_URL)" >> report.md
+        echo "---" >> report.md
         
         # Visual Artifacts
         if [ -f last_run_path.txt ]; then
@@ -131,5 +125,8 @@ jobs:
           cml publish "$REL_RUN_PATH/confusion_matrix.png" --md >> report.md
         fi
         
-        # Update existing comment or create new one with watermark to prevent duplicates
+        # Update existing comment or create new one with watermark
         cml comment create --watermark-title="mlops-report" report.md
+        
+        # Clean up temporary handover files so they don't trigger report on next minor commit
+        rm -f mlflow_run.txt last_run_path.txt
