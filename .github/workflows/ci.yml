@@ -46,9 +46,10 @@ jobs:
 
     - name: Clean and Start Infrastructure
       run: |
-        docker compose -f docker/docker-compose.yml down -v --remove-orphans || true
-        mkdir -p mlflow-history
-        chmod -R 777 mlflow-history
+        # Stop and remove only the containers, PRESERVE the data!
+        docker compose -f docker/docker-compose.yml down --remove-orphans || true
+        # Only create if it doesn't exist, never overwrite
+        mkdir -p mlflow-history dvc-storage
         docker compose -f docker/docker-compose.yml up -d
         echo "Waiting for MLflow API and RustFS to be ready..."
         for i in {1..30}; do
