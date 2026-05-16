@@ -10,6 +10,10 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   validate-pipeline:
     runs-on: self-hosted
@@ -84,7 +88,8 @@ jobs:
         echo "S3 Endpoint: $MLFLOW_S3_ENDPOINT_URL"
         rm -f dvc.lock .dvc/tmp/lock || true
         dvc repro
-        dvc push
+        dvc push mlflow-history
+        dvc push data/raw.dvc
 
     - name: Generate Metrics Report and Post to GitHub PR
       env:
@@ -132,7 +137,7 @@ jobs:
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        # Capture the new DVC vault data and the experiment logs (now inside dvc-storage)
+        # Capture the new DVC vault data (which now includes the mlflow history)
         git add dvc-storage .gitignore dvc.lock mlflow_run.txt
         git commit -m "MLOps: Capture CI/CD experiment in Simulation Vault [skip ci]" || echo "No changes to commit"
         git push

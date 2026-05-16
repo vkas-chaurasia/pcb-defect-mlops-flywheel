@@ -236,4 +236,6 @@ dvc/tests/
 !/dvc-storage
 /dvc-storage/.minio.sys
 /runs
-/mlflow_run.txt
+# /mlflow_run.txt
+/mlflow-history
+/mlartifacts
