@@ -1,0 +1,4 @@
+RUN_ID=21099be00bc24255aa8675fb5466e652
+EXP_ID=1
+RUN_URL=http://localhost:5555/#/experiments/1/runs/21099be00bc24255aa8675fb5466e652
+EXP_URL=http://localhost:5555/#/experiments/1

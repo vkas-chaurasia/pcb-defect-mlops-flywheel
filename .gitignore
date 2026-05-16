@@ -232,4 +232,10 @@ data/yolo
 models
 mlruns
 dvc/tests/
-dvc-storage/
+# Track the Simulation Vault (dvc-storage)
+!/dvc-storage
+/dvc-storage/.minio.sys
+/runs
+# /mlflow_run.txt
+/mlflow-history
+/mlartifacts

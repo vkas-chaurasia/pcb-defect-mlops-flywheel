@@ -11,21 +11,16 @@ stages:
       nfiles: 4489
     - path: src/data/preprocess.py
       hash: md5
-      md5: 5da962e889b205baad51874954f7c653
-      size: 9319
+      md5: c181297379177e244140533dd1ef3ba5
+      size: 9444
     outs:
     - path: data/processed
       hash: md5
       md5: 0b70b6afb12e8c29f81bfe586b220e28.dir
       size: 22480035
       nfiles: 4
-    - path: data/yolo
-      hash: md5
-      md5: 65bee0fb123aa4bf4dea0b5e0b18190b.dir
-      size: 23564427
-      nfiles: 2993
   train:
-    cmd: python3 src/training/train.py --epochs 2 --img-size 224
+    cmd: python3 src/training/train.py --epochs 1 --img-size 224 --batch 16
     deps:
     - path: data/processed
       hash: md5
@@ -34,11 +29,25 @@ stages:
       nfiles: 4
     - path: src/training/train.py
       hash: md5
-      md5: 1928a6233a204fbcb56caea9bcebeae4
-      size: 6491
+      md5: ac616ffabd16cc015dc93c930de55bc9
+      size: 7468
     outs:
-    - path: mlruns/
+    - path: data/yolo
       hash: md5
-      md5: 45abecbde4dc5039fdb122008c33889c.dir
-      size: 258851862
-      nfiles: 268
+      md5: 5192e090d09a2281740964559fcdc76d.dir
+      size: 23624221
+      nfiles: 2993
+    - path: metrics.json
+      hash: md5
+      md5: a6d133751acb46b5ff03700045a894c5
+      size: 224
+    - path: mlflow-history
+      hash: md5
+      md5: 46816ce857326453f3ce78e4f0ef5f4f.dir
+      size: 43561698
+      nfiles: 55
+    - path: runs
+      hash: md5
+      md5: 7d1bc4105417d56678beadd990c7a196.dir
+      size: 15227842
+      nfiles: 21

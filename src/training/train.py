@@ -1,3 +1,4 @@
+# CI/CD Trigger: Kickstarting the pipeline
 import argparse
 import json
 import os
@@ -13,6 +14,10 @@ import mlflow.pytorch
 import mlflow.data
 from ultralytics import settings
 from tqdm import tqdm
+from dotenv import load_dotenv
+
+# Load local .env if present
+load_dotenv()
 
 # --- Configuration ---
 PROJECT_ROOT  = Path(os.getcwd()).absolute()
@@ -20,7 +25,10 @@ CLASS_NAMES   = ["open", "short", "mousebite", "spur", "spurious_copper", "pin_h
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 YOLO_DIR      = PROJECT_ROOT / "data" / "yolo"
 RUNS_DIR      = PROJECT_ROOT / "runs" / "detect"
-MLFLOW_URI    = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5555")
+# Detect environment: Always use port 5555 for the Smart MLflow service
+DEFAULT_MLFLOW_URI = "http://localhost:5555"
+
+MLFLOW_URI = os.getenv("MLFLOW_TRACKING_URI", DEFAULT_MLFLOW_URI)
 
 # S3 Configuration is now handled by the MLflow Artifact Proxy (Server-side)
 # Direct client-side S3 access is no longer required.
@@ -68,6 +76,7 @@ def prepare_yolo_data(processed_dir: Path, yolo_dir: Path, img_size: int):
                 lines.append(f"{int(cls)} {cx:.6f} {cy:.6f} {bw:.6f} {bh:.6f}")
             (lbl_out / f"{split}_{i:06d}.txt").write_text("\n".join(lines))
 
+    print("YOLO dataset images and labels prepared.")
     dataset_cfg = {"path": str(yolo_dir), "train": "images/train", "val": "images/val", "test": "images/test", "nc": len(CLASS_NAMES), "names": CLASS_NAMES}
     with open(yaml_path, "w") as f:
         yaml.dump(dataset_cfg, f)
@@ -89,9 +98,13 @@ def main():
     yaml_path = prepare_yolo_data(PROCESSED_DIR, YOLO_DIR, args.img_size)
 
     # MLflow Setup
+    print(f"Connecting to MLflow at {MLFLOW_URI}...")
     mlflow.set_tracking_uri(MLFLOW_URI)
-    mlflow.set_experiment("pcb-defect-detection")
-    exp = mlflow.get_experiment_by_name("pcb-defect-detection")
+    # Unified experiment for both local and production runs
+    experiment_name = "pcb-defect-detection"
+    mlflow.set_experiment(experiment_name)
+    print(f"Connected to MLflow Experiment: {experiment_name}")
+    exp = mlflow.get_experiment_by_name(experiment_name)
 
     # Disable YOLO's internal MLflow callback to prevent duplicate runs
     from ultralytics import YOLO, settings
@@ -147,8 +160,24 @@ def main():
         with open("metrics.json", "w") as f:
             json.dump(clean_metrics, f, indent=4)
 
-        # Log all YOLO artifacts
+        # Log the formal PyTorch model (Master branch pattern)
         yolo_run_dir = RUNS_DIR / "pcb-defect-detection" / run_name
+        best_pt = yolo_run_dir / "weights" / "best.pt"
+        
+        if best_pt.exists():
+            print("Logging formal PyTorch model flavor...")
+            import torch
+            ckpt = torch.load(best_pt, weights_only=False)
+            brain = ckpt['model']
+            
+            
+            
+            mlflow.pytorch.log_model(
+                pytorch_model=brain,
+                artifact_path="pcb-yolo-model"
+            )
+
+        # Log all YOLO artifacts (Unspoiled)
         if yolo_run_dir.exists():
             mlflow.log_artifacts(str(yolo_run_dir))
             
@@ -162,6 +191,9 @@ def main():
                 f.write(f"EXP_ID={exp.experiment_id}\n")
                 f.write(f"RUN_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}/runs/{run_id}\n")
                 f.write(f"EXP_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}\n")
+
+        # Ensure DVC sees the history folder exists (to avoid errors)
+        os.makedirs(PROJECT_ROOT / "mlflow-history", exist_ok=True)
 
     print(f"\nTraining and Logging Complete. Run ID: {run_id}")
 
