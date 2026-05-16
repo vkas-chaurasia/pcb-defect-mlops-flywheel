@@ -61,25 +61,26 @@ Once Docker is up, your ecosystem is live at:
 
 ## The Flywheel Workflow
 
-### Phase 1: Annotation & Active Learning
-1. Upload new PCB images to Label Studio.
-2. Use the Active Learning Loop in the Streamlit UI to trigger batch inference on unseen images.
-3. Sync labels back to the repo using src/utils/sync_labels.py.
-
-### Phase 2: Training & Validation
-Execute the pipeline with DVC. This ensures every run is reproducible and tracked.
+### Phase 1: Training and Validation
+Execute the pipeline with DVC to establish your baseline model. This ensures every run is reproducible and tracked.
 ```bash
 dvc repro
 ```
 - **Local Dev**: Logs results to Port 5555.
 - **CI/CD**: When you push to a PR, the runner executes a "Showcase" run on Port 5556 and posts a visual report (Confusion Matrix, F1-Curves) directly to your GitHub PR comment.
 
-### Phase 3: Serving & Monitoring
-Deploy your champion model to the FastAPI server:
+### Phase 2: Serving and Monitoring
+Deploy your champion model to the FastAPI server for real-time inference:
 ```bash
-# Serves the champion model from MLflow registry or local weights
+# Serves the champion model from local weights or MLflow registry
 python src/serving/serve.py --weights models/best.pt
 ```
+
+### Phase 3: Active Learning and Refinement
+Once the model is serving, you can start the continuous improvement loop:
+1. Upload new "unseen" PCB images to Label Studio.
+2. Use the Active Learning Loop in the Streamlit UI to trigger batch inference and identify high-uncertainty cases.
+3. Sync refined labels back to the repo using src/utils/sync_labels.py and return to Phase 1.
 
 ---
 
