@@ -1,1 +1,0 @@
-/Users/vikas/zhaw/FS2026/MLOps/pcb-defect-mlops-flywheel/runs/detect/pcb-defect-detection/masked-dog-212
