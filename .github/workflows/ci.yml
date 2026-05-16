@@ -49,25 +49,17 @@ jobs:
         pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Ensure Infrastructure is Running
+    - name: Infrastructure Health Check
       run: |
-        # Don't stop anything! Just make sure everything is up.
-        # Docker Compose will skip starting if already running.
-        # Only create if it doesn't exist, never overwrite
-        mkdir -p mlflow-official-history
-        docker compose -f docker/docker-compose.yml up -d
-        echo "Waiting for MLflow (Official) and RustFS..."
-        for i in {1..40}; do
-          if curl -sf http://localhost:5556/ > /dev/null && curl -sf http://localhost:9000/health > /dev/null; then
-            echo "Infrastructure is fully ready!"
-            exit 0
-          fi
-          echo "...still waiting for services..."
-          sleep 5
-        done
-        echo "Infrastructure timed out. Docker logs:"
-        docker logs mlflow
-        exit 1
+        echo "Checking if MLOps Flywheel (Docker) is running on Mac..."
+        # Check MLflow (Official) on 5556 and RustFS on 9000
+        if curl -sf http://localhost:5556/ > /dev/null && curl -sf http://localhost:9000/health > /dev/null; then
+          echo "Infrastructure is HEALTHY! Proceeding with pipeline."
+        else
+          echo "ERROR: Infrastructure is NOT running!"
+          echo "Please ensure 'docker compose -f docker/docker-compose.yml up -d' is running on your Mac."
+          exit 1
+        fi
 
     - name: Pull Data from DVC
       env:

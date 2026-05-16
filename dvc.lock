@@ -20,7 +20,7 @@ stages:
       size: 22480035
       nfiles: 4
   train:
-    cmd: python3 src/training/train.py --epochs 1 --img-size 224 --batch 16
+    cmd: python3 src/training/train.py --epochs 2 --img-size 224 --batch 16
     deps:
     - path: data/processed
       hash: md5
@@ -39,15 +39,5 @@ stages:
       nfiles: 2993
     - path: metrics.json
       hash: md5
-      md5: a6d133751acb46b5ff03700045a894c5
-      size: 224
-    - path: mlflow-history
-      hash: md5
-      md5: d149e02714c5b6cac26e225dac00c0c7.dir
-      size: 43560138
-      nfiles: 55
-    - path: runs
-      hash: md5
-      md5: 11775d8e17f1d6b07c12e54e67e9cb3b.dir
-      size: 15222413
-      nfiles: 21
+      md5: 56683daca568e71ebd7f20f898abe4d1
+      size: 218

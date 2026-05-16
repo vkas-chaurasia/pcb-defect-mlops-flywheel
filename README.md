@@ -16,6 +16,18 @@ The pipeline utilizes a containerized infrastructure managed via Docker Compose:
 
 ---
 
+## ⚠️ Important: Infrastructure Prerequisite
+
+This project uses a self-hosted CI/CD architecture. Before running any training or triggering a GitHub Action, you **MUST** ensure the local infrastructure is running on your Mac:
+
+```bash
+docker compose -f docker/docker-compose.yml up -d
+```
+
+The CI/CD pipeline performs a health check on ports **5556** (MLflow-Official) and **9000** (RustFS). If these services are not reachable, the pipeline will fail.
+
+---
+
 ## Quick Start (Onboarding)
 
 Follow these steps to initialize the environment and synchronize the latest model artifacts.
