@@ -54,11 +54,11 @@ jobs:
         # Don't stop anything! Just make sure everything is up.
         # Docker Compose will skip starting if already running.
         # Only create if it doesn't exist, never overwrite
-        mkdir -p mlflow-history
+        mkdir -p mlflow-official-history
         docker compose -f docker/docker-compose.yml up -d
-        echo "Waiting for MLflow API and RustFS to be ready..."
+        echo "Waiting for MLflow (Official) and RustFS..."
         for i in {1..40}; do
-          if curl -sf http://localhost:5555/ > /dev/null && curl -sf http://localhost:9000/health > /dev/null; then
+          if curl -sf http://localhost:5556/ > /dev/null && curl -sf http://localhost:9000/health > /dev/null; then
             echo "Infrastructure is fully ready!"
             exit 0
           fi
@@ -78,9 +78,9 @@ jobs:
 
     - name: Reproduce Pipeline
       env:
-        # Detect environment: Always use port 5555 for the Smart MLflow service
-        DEFAULT_MLFLOW_URI: "http://localhost:5555"
-        MLFLOW_TRACKING_URI: http://localhost:5555
+        # CI/CD always logs to the Official Team Instance
+        DEFAULT_MLFLOW_URI: "http://localhost:5556"
+        MLFLOW_TRACKING_URI: http://localhost:5556
         MLFLOW_S3_ENDPOINT_URL: http://localhost:9000
         AWS_ACCESS_KEY_ID: rustfsadmin
         AWS_SECRET_ACCESS_KEY: rustfsadmin
@@ -89,7 +89,9 @@ jobs:
         echo "S3 Endpoint: $MLFLOW_S3_ENDPOINT_URL"
         rm -f dvc.lock .dvc/tmp/lock || true
         dvc repro
-        dvc commit mlflow-history || true
+        # Persist the official run record in Git
+        git add mlflow-official-history
+        git commit -m "CI: Record official training run metadata" || true
         dvc push
 
     - name: Generate Metrics Report and Post to GitHub PR
