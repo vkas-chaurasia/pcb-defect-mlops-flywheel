@@ -133,12 +133,3 @@ jobs:
         
         # Update existing comment or create new one with watermark to prevent duplicates
         cml comment create --watermark-title="mlops-report" report.md
-
-    - name: Commit and Push Simulation Vault
-      run: |
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
-        # Capture the new DVC vault data (which now includes the mlflow history)
-        git add dvc-storage .gitignore dvc.lock mlflow_run.txt
-        git commit -m "MLOps: Capture CI/CD experiment in Simulation Vault [skip ci]" || echo "No changes to commit"
-        git push origin HEAD:${{ github.head_ref || github.ref_name }}
