@@ -27,7 +27,7 @@ jobs:
       with:
         fetch-depth: 0
         ref: ${{ github.head_ref || github.ref_name }}
-        clean: false
+        clean: true
 
     - name: Setup Safe CI Environment (macOS)
       run: |
