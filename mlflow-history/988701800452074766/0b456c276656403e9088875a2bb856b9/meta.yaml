@@ -1,0 +1,14 @@
+artifact_uri: mlflow-artifacts:/988701800452074766/0b456c276656403e9088875a2bb856b9/artifacts
+end_time: 1778892457741
+entry_point_name: ''
+experiment_id: '988701800452074766'
+lifecycle_stage: active
+run_id: 0b456c276656403e9088875a2bb856b9
+run_name: traveling-frog-862
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1778892415508
+status: 3
+tags: []
+user_id: vikas

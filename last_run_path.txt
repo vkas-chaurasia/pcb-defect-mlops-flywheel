@@ -1,1 +1,1 @@
-/Users/vikas/zhaw/FS2026/MLOps/pcb-defect-mlops-flywheel/runs/detect/pcb-defect-detection/blushing-skunk-744
+/Users/vikas/zhaw/FS2026/MLOps/pcb-defect-mlops-flywheel/runs/detect/pcb-defect-detection/traveling-frog-862

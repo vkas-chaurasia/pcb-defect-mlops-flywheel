@@ -49,7 +49,7 @@ jobs:
         # Don't stop anything! Just make sure everything is up.
         # Docker Compose will skip starting if already running.
         # Only create if it doesn't exist, never overwrite
-        mkdir -p mlflow-history dvc-storage
+        mkdir -p mlflow-history
         docker compose -f docker/docker-compose.yml up -d
         echo "Waiting for MLflow API and RustFS to be ready..."
         for i in {1..30}; do
@@ -132,7 +132,7 @@ jobs:
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        # Capture the new DVC vault data and the experiment logs
-        git add dvc-storage .gitignore dvc.lock mlflow_run.txt mlflow-history
+        # Capture the new DVC vault data and the experiment logs (now inside dvc-storage)
+        git add dvc-storage .gitignore dvc.lock mlflow_run.txt
         git commit -m "MLOps: Capture CI/CD experiment in Simulation Vault [skip ci]" || echo "No changes to commit"
         git push
