@@ -26,6 +26,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+        ref: ${{ github.head_ref || github.ref_name }}
         clean: false
 
     - name: Setup Safe CI Environment (macOS)
@@ -89,7 +90,7 @@ jobs:
         rm -f dvc.lock .dvc/tmp/lock || true
         dvc repro
         dvc commit mlflow-history || true
-        dvc push data/raw.dvc
+        dvc push
 
     - name: Generate Metrics Report and Post to GitHub PR
       env:
@@ -140,4 +141,4 @@ jobs:
         # Capture the new DVC vault data (which now includes the mlflow history)
         git add dvc-storage .gitignore dvc.lock mlflow_run.txt
         git commit -m "MLOps: Capture CI/CD experiment in Simulation Vault [skip ci]" || echo "No changes to commit"
-        git push
+        git push origin HEAD:${{ github.head_ref || github.ref_name }}
