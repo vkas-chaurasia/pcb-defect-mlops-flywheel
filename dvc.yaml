@@ -15,9 +15,6 @@ stages:
     outs:
       - data/yolo
       - runs
-      - mlflow-history:
-          remote: logs-storage
-      - mlflow_run.txt
     metrics:
       - metrics.json:
           cache: false

@@ -88,7 +88,7 @@ jobs:
         echo "S3 Endpoint: $MLFLOW_S3_ENDPOINT_URL"
         rm -f dvc.lock .dvc/tmp/lock || true
         dvc repro
-        dvc push mlflow-history
+        dvc commit mlflow-history || true
         dvc push data/raw.dvc
 
     - name: Generate Metrics Report and Post to GitHub PR
