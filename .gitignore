@@ -243,5 +243,7 @@ mlruns
 
 # Official Team/Professor Record (Tracked)
 !/mlflow-official-history
+!/mlflow-official-history/mlartifacts
 mlflow_run.txt
 /mlartifacts
+last_run_path.txt
