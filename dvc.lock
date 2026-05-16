@@ -43,11 +43,11 @@ stages:
       size: 224
     - path: mlflow-history
       hash: md5
-      md5: 0bebe44e775d1c31d39377de6d4f762d.dir
-      size: 22136289
-      nfiles: 28
+      md5: d149e02714c5b6cac26e225dac00c0c7.dir
+      size: 43560138
+      nfiles: 55
     - path: runs
       hash: md5
-      md5: 1db100b1490b6e8573d1395c21b24a78.dir
-      size: 15227321
+      md5: 85857c5538797494033bde39d1725e07.dir
+      size: 15227323
       nfiles: 21

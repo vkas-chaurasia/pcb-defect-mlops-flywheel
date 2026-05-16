@@ -238,12 +238,10 @@ mlruns
 /dvc-storage/.minio.sys
 /dvc-storage/tmp
 /dvc-storage/multipart
-# Local Private Sandbox (Ignored)
+# MLflow History (Local Only)
 /mlflow-history
-
-# Official Team/Professor Record (Tracked)
-!/mlflow-official-history
-!/mlflow-official-history/mlartifacts
+/mlflow-official-history
 mlflow_run.txt
 /mlartifacts
 last_run_path.txt
+/runs
