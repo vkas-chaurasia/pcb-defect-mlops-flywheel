@@ -31,14 +31,16 @@ services:
 
   # S3 Compatible Storage (RustFS)
   rustfs:
-    image: minio/minio:latest
+    image: rustfs/rustfs:latest
     container_name: rustfs
     ports:
       - "9000:9000"
       - "9001:9001"
     environment:
-      - MINIO_ROOT_USER=rustfsadmin
-      - MINIO_ROOT_PASSWORD=rustfsadmin
+      - RUSTFS_ADDRESS=0.0.0.0:9000
+      - RUSTFS_CONSOLE_ADDRESS=0.0.0.0:9001
+      - RUSTFS_ACCESS_KEY=rustfsadmin
+      - RUSTFS_SECRET_KEY=rustfsadmin
+      - RUSTFS_VOLUMES=/data
     volumes:
       - ../dvc-storage:/data
-    command: server /data --console-address ":9001"
