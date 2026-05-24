@@ -7,10 +7,8 @@ concurrency:
 on:
   push:
     branches: [ "main" ]
-  pull_request_review:
-    types: [submitted]
-  issue_comment:
-    types: [created]
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
@@ -21,8 +19,7 @@ jobs:
     runs-on: self-hosted
     if: >
       github.event_name == 'push' ||
-      (github.event_name == 'pull_request_review' && github.event.review.state == 'approved') ||
-      (github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.comment.body, '/train'))
+      github.event_name == 'pull_request'
     permissions:
       contents: write
       pull-requests: write
@@ -33,12 +30,8 @@ jobs:
       run: |
         if [ "${{ github.event_name }}" = "push" ]; then
           echo "branch=main" >> $GITHUB_OUTPUT
-        elif [ "${{ github.event_name }}" = "pull_request_review" ]; then
+        elif [ "${{ github.event_name }}" = "pull_request" ]; then
           echo "branch=${{ github.event.pull_request.head.ref }}" >> $GITHUB_OUTPUT
-        elif [ "${{ github.event_name }}" = "issue_comment" ]; then
-          PR_URL="${{ github.event.issue.pull_request.url }}"
-          BRANCH=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$PR_URL" | jq -r '.head.ref')
-          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
         else
           echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
         fi
@@ -99,7 +92,10 @@ jobs:
         AWS_SECRET_ACCESS_KEY: rustfsadmin
       run: |
         echo "MLflow Tracking URI: $MLFLOW_TRACKING_URI"
-        rm -f dvc.lock .dvc/tmp/lock || true
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          echo "Forcing retrain for Pull Request..."
+          rm -f dvc.lock .dvc/tmp/lock || true
+        fi
         dvc repro
         dvc push
 
@@ -112,11 +108,22 @@ jobs:
           
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add monitoring/reference_predictions.csv
-          git commit -m "chore: update reference baseline predictions after retraining" || true
+          git add monitoring/reference_predictions.csv dvc.lock models/model_meta.json
+          git commit -m "chore: update reference baseline predictions and candidate model state after retraining" || true
           git push origin HEAD:${{ steps.get_branch.outputs.branch }} || true
         else
           echo "No last_run_path.txt found. Skipping reference update."
+        fi
+
+    - name: Register Staging Model
+      if: github.event_name == 'push'
+      env:
+        MLFLOW_TRACKING_URI: http://localhost:5556
+      run: |
+        if [ -f models/model_meta.json ]; then
+          python src/utils/register_model.py
+        else
+          echo "No models/model_meta.json found. Skipping registration."
         fi
 
     - name: Generate Metrics Report and Post to GitHub PR

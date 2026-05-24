@@ -255,6 +255,36 @@ app.add_middleware(
 app.mount("/data", StaticFiles(directory="data"), name="data")
 
 
+@app.on_event("startup")
+def start_polling_thread():
+    import threading
+    
+    def poll_champion_model():
+        import mlflow
+        import time
+        # Poll the Official Team MLflow (Port 5556) where Governance happens
+        mlflow.set_tracking_uri("http://localhost:5556")
+        
+        while True:
+            time.sleep(30)
+            try:
+                # Check for the @champion model
+                weights = mlflow.artifacts.download_artifacts(artifact_uri="models:/pcb-defect-model@champion/weights/best.pt")
+                if weights != ModelManager._weights:
+                    print(f"\n🔄 [HOT RELOAD] New @champion model detected in Registry!")
+                    print(f"Old path: {ModelManager._weights}")
+                    print(f"New path: {weights}")
+                    ModelManager.load(weights, ModelManager._img_size)
+                    print("✅ Hot reload complete. New Champion is live.")
+            except Exception:
+                # Fail silently if MLflow is unreachable or alias doesn't exist yet
+                pass
+
+    t = threading.Thread(target=poll_champion_model, daemon=True)
+    t.start()
+    print("Started background polling thread for @champion model (30s interval).")
+
+
 @app.get("/health", response_model=HealthResponse, tags=["Monitoring"])
 def health_check():
     """Returns service status and loaded model information."""
@@ -396,7 +426,7 @@ def main(weights: str = None, host: str = "0.0.0.0", port: int = 8000,
         # 1. Try MLflow first (The Modern Human-Gatekeeper Way)
         try:
             import mlflow
-            mlflow.set_tracking_uri("http://localhost:5555")
+            mlflow.set_tracking_uri("http://localhost:5556")
             print("Checking MLflow Model Registry for '@champion' alias (Waiting for your Approval)...")
             # We look for the model with the '@champion' alias
             weights = mlflow.artifacts.download_artifacts(artifact_uri="models:/pcb-defect-model@champion/weights/best.pt")

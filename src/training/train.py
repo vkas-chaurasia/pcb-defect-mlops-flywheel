@@ -191,6 +191,11 @@ def main():
                 f.write(f"EXP_ID={exp.experiment_id}\n")
                 f.write(f"RUN_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}/runs/{run_id}\n")
                 f.write(f"EXP_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}\n")
+                
+            # Save persistent metadata to be committed to Git
+            os.makedirs("models", exist_ok=True)
+            with open("models/model_meta.json", "w") as f:
+                json.dump({"RUN_ID": run_id, "EXP_ID": exp.experiment_id}, f, indent=4)
 
         # Ensure DVC sees the history folder exists (to avoid errors)
         os.makedirs(PROJECT_ROOT / "mlflow-history", exist_ok=True)

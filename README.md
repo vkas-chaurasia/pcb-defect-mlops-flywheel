@@ -21,36 +21,34 @@ This repository implements a production-grade MLOps ecosystem for automated PCB 
 
 ---
 
-## Important: Infrastructure Prerequisite
+## Onboarding: Quick Start
 
-This project uses a self-hosted CI/CD architecture. Before running any scripts or triggering CI/CD, you MUST have the Docker services running on the host machine:
+### 1. Clone the Repository
+```bash
+git clone <repository_url>
+cd pcb-defect-mlops-flywheel
+```
 
+### 2. Infrastructure Prerequisite (Docker)
+This project uses a self-hosted CI/CD architecture. Before running any local scripts or triggering CI/CD, the Docker services MUST be running:
 ```bash
 # Launch the Flywheel Infrastructure
 docker compose -f docker/docker-compose.yml up -d
 ```
-
 *Note: The self-hosted CI/CD runner communicates with these containers via localhost. If they are not running, the pipeline will fail its health checks.*
 
-### Starting the Self-Hosted Runner
-If you plan to test or run the automated GitHub CI/CD pipelines (e.g., triggering `/train` on a PR), you must also have a local GitHub Actions runner active:
-1. Go to your GitHub repository -> **Settings** -> **Actions** -> **Runners**.
-2. Click **New self-hosted runner** and follow the instructions to download and configure it.
-3. Start the runner in a separate terminal:
-   ```bash
-   ./run.sh
-   ```
+### 3. Access the Ecosystem
+Available services:
+- **FastAPI Docs**: http://localhost:8000/docs
+- **Streamlit UI**: http://localhost:8501
+- **Airflow UI**: http://localhost:8081 (admin / admin)
+- **MLflow (Sandbox)**: http://localhost:5555
+- **MLflow (Official)**: http://localhost:5556
+- **Label Studio**: http://localhost:8080 (Admin: admin@example.com / mlops123)
 
----
-
-## Onboarding: Quick Start
-
-### 1. Environment Setup
+### 4. Local Environment Setup
+Initialize Python environment and download data:
 ```bash
-# Clone and Enter
-git clone <repository_url>
-cd pcb-defect-mlops-flywheel
-
 # Initialize Virtual Environment (using UV or Pip)
 uv sync  # Recommended
 # OR: python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
@@ -59,46 +57,50 @@ uv sync  # Recommended
 dvc pull
 ```
 
-### 2. Access the Ecosystem
-Once Docker is up, your ecosystem is live at:
-- **FastAPI Docs**: http://localhost:8000/docs
-- **Streamlit UI**: http://localhost:8501
-- **Airflow UI**: http://localhost:8081 (admin / admin)
-- **MLflow (Sandbox)**: http://localhost:5555
-- **MLflow (Official)**: http://localhost:5556
-- **Label Studio**: http://localhost:8080 (Admin: admin@example.com / mlops123)
+### 5. Starting the Self-Hosted Runner (For CI/CD)
+To use the automated GitHub CI/CD pipelines, a local runner is required:
+1. Go to the GitHub repository -> **Settings** -> **Actions** -> **Runners**.
+2. Click **New self-hosted runner** and follow the instructions to download and configure it.
+3. Start the runner in a separate terminal:
+   ```bash
+   ./run.sh
+   ```
 
 ---
 
 ## The Complete MLOps Flywheel Workflow
 
 ### Phase 1: Training and Validation
-Execute the pipeline with DVC to establish your baseline model. This ensures every run is reproducible and tracked.
+Execute the pipeline with DVC to establish the baseline model.
 ```bash
 dvc repro
 ```
-- **Local Dev**: Logs results to Port 5555.
-- **CI/CD Retraining**: The retraining pipeline is designed for **Human-in-the-Loop** validation. It triggers when:
-  1. A Pull Request is **Approved** via GitHub review.
-  2. A repository member comments **`/train`** on a Pull Request.
-  The CI pipeline resolves the target branch dynamically, runs `dvc repro`, updates the model and reference baselines, and pushes the new artifacts back to the PR branch. A visual report (Confusion Matrix, F1-Curves) is posted as a PR comment.
+- **Local Dev**: Logs results to Port 5555 (Local Sandbox MLflow).
+- **CI/CD Retraining**: Logs results to Port 5556 (Official Team MLflow). The retraining pipeline triggers automatically whenever a Pull Request is opened or updated.
+  The CI pipeline dynamically resolves the branch, runs `dvc repro`, and posts a visual report (Confusion Matrix, F1-Curves) as a PR comment.
+- **Merge to Main**: When the PR is merged to `main`, the CI pipeline automatically registers the model to the MLflow Model Registry and applies the `@staging` alias.
 
-### Phase 2: Serving and Monitoring
-Deploy your champion model to the FastAPI server for real-time inference. The server continuously logs prediction confidence and metrics for drift analysis.
+### Phase 2: Model Governance & GitOps Promotion
+Before a model reaches production, it must pass governance:
+- **Automated Evaluation**: The Airflow `model_evaluation_dag` fetches the `@staging` model from MLflow and runs simulated tests.
+- **Governance PR**: If the model passes, Airflow automatically creates a Pull Request updating the `deployment-repo/production_version.json` file.
+- **Promotion to Champion**: Once a human approves and merges the Governance PR, a GitHub Action automatically updates the MLflow Registry, promoting the model to `@champion`.
+
+### Phase 3: Serving and Monitoring
+Deploy the champion model to the FastAPI server for real-time inference. The server continuously logs prediction confidence for drift analysis.
 ```bash
-# Serves the champion model from local weights or MLflow registry
-python src/serving/serve.py --weights models/best.pt
+# Serves the champion model from the MLflow registry
+python src/serving/serve.py
 ```
 - **Data Drift Detection**: Data drift is calculated using Population Stability Index (PSI). 
-  - *Note for macOS users*: The drift calculation is implemented using pure Python/NumPy to strictly avoid `scipy.linalg` (or `evidently`) thread-lock/deadlock issues on Apple Silicon.
-- **Airflow Automation**: The `drift_monitoring_dag` runs continuously in Airflow to analyze live FastAPI prediction logs against the model baseline. If significant drift is detected, it flags the system for retraining.
+- **Airflow Automation**: The `drift_monitoring_dag` analyzes live FastAPI prediction logs against the baseline. If significant drift is detected, it flags the system for retraining.
 
-### Phase 3: Active Learning and Refinement
-Once the model is serving and monitored, you can close the loop:
+### Phase 4: Active Learning and Refinement
+To refine the model using active learning:
 1. Upload new "unseen" or drifted PCB images to Label Studio.
-2. Use the Active Learning Loop in the Streamlit UI to trigger batch inference and identify high-uncertainty cases.
-3. Sync refined labels back to the repo (automated via Airflow or manually via `src/utils/sync_labels.py`).
-4. Return to Phase 1 (Trigger `/train` on a PR to incorporate new data).
+2. Use the Active Learning Loop in the Streamlit UI to identify high-uncertainty cases.
+3. Sync refined labels back to the repo (`src/utils/sync_labels.py`).
+4. Return to Phase 1 (Open a Pull Request to incorporate new data).
 
 ---
 
@@ -118,9 +120,7 @@ Once the model is serving and monitored, you can close the loop:
 ## Best Practices
 - **Never Commit data/raw**: Always use `dvc push` to store large images in RustFS.
 - **Official Runs**: Only the CI/CD pipeline should log to Port 5556 to keep the "Official Showroom" clean.
-- **PR Reports**: Always review the CML report in your Pull Request before merging to main.
-- **Model Approvals**: Model retraining in CI only runs on explicit approval or a `/train` trigger comment to avoid runaway compute costs.
+- **PR Reports**: Always review the CML report in the Pull Request before merging to main.
 
 ---
 **Developed for the ZHAW MLOps Course (Spring 2026)**
-🏆 *Stabilizing the Flywheel, one PCB at a time.*
