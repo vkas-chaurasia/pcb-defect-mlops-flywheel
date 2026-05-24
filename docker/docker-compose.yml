@@ -62,3 +62,31 @@ services:
       - RUSTFS_VOLUMES=/data
     volumes:
       - ../dvc-storage:/data
+
+  # Apache Airflow Standalone
+  airflow:
+    image: apache/airflow:latest
+    container_name: airflow
+    ports:
+      - "8085:8080"
+    user: "501:20"
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/project/dags
+      - _PIP_ADDITIONAL_REQUIREMENTS=pandas numpy requests label-studio-sdk python-dotenv dvc[s3]
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_REPO=${GITHUB_REPO}
+      - LABEL_STUDIO_URL=http://label-studio:8080
+      - LABEL_STUDIO_API_KEY=4c5c6e9a5c5c42458204e855a68a0fcd4c5c6e9a
+      - LABEL_STUDIO_PROJECT_ID=1
+      - DVC_REMOTE_PCB_VAULT_ENDPOINTURL=http://rustfs:9000
+      - DVC_REMOTE_LOGS_STORAGE_ENDPOINTURL=http://rustfs:9000
+      - DVC_REMOTE_MODELS_STORAGE_ENDPOINTURL=http://rustfs:9000
+      - AWS_ACCESS_KEY_ID=rustfsadmin
+      - AWS_SECRET_ACCESS_KEY=rustfsadmin
+    volumes:
+      - ..:/opt/airflow/project
+    working_dir: /opt/airflow/project
+    command: standalone
+

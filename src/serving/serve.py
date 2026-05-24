@@ -39,6 +39,7 @@ Usage
 import argparse
 import io
 import time
+import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -53,6 +54,7 @@ try:
     from fastapi.staticfiles import StaticFiles
     from pydantic import BaseModel
     import uvicorn
+    from src.monitoring.prediction_logger import PredictionLogger
 except ImportError:
     raise ImportError(
         "FastAPI stack not installed.\n"
@@ -240,6 +242,8 @@ app = FastAPI(
     version     = "1.0.0",
 )
 
+prediction_logger = PredictionLogger(os.getenv("PREDICTION_LOG_PATH", "monitoring/prediction_log.csv"))
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins  = ["*"],
@@ -298,6 +302,7 @@ async def predict_single(
 
     try:
         response = run_inference(img_bgr, file.filename or "image.jpg", conf, iou)
+        prediction_logger.log(response)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Inference failed: {e}")
 
@@ -326,6 +331,7 @@ async def predict_batch(
         try:
             img_bgr = decode_image(raw)
             result  = run_inference(img_bgr, f.filename or "image.jpg", conf, iou)
+            prediction_logger.log(result)
         except Exception as e:
             # include a placeholder with error info rather than aborting the batch
             result = PredictionResponse(

@@ -7,8 +7,10 @@ concurrency:
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  pull_request_review:
+    types: [submitted]
+  issue_comment:
+    types: [created]
 
 permissions:
   contents: write
@@ -17,17 +19,36 @@ permissions:
 jobs:
   validate-pipeline:
     runs-on: self-hosted
+    if: >
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request_review' && github.event.review.state == 'approved') ||
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.comment.body, '/train'))
     permissions:
       contents: write
       pull-requests: write
 
     steps:
+    - name: Determine Branch
+      id: get_branch
+      run: |
+        if [ "${{ github.event_name }}" = "push" ]; then
+          echo "branch=main" >> $GITHUB_OUTPUT
+        elif [ "${{ github.event_name }}" = "pull_request_review" ]; then
+          echo "branch=${{ github.event.pull_request.head.ref }}" >> $GITHUB_OUTPUT
+        elif [ "${{ github.event_name }}" = "issue_comment" ]; then
+          PR_URL="${{ github.event.issue.pull_request.url }}"
+          BRANCH=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$PR_URL" | jq -r '.head.ref')
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+        else
+          echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+        fi
+
     - name: Checkout Repository
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
         clean: false
-        ref: ${{ github.head_ref || github.ref_name }}
+        ref: ${{ steps.get_branch.outputs.branch }}
 
     - name: Setup Safe CI Environment (macOS)
       run: |
@@ -81,6 +102,22 @@ jobs:
         rm -f dvc.lock .dvc/tmp/lock || true
         dvc repro
         dvc push
+
+    - name: Update Reference Baseline Predictions
+      run: |
+        if [ -f last_run_path.txt ]; then
+          NEW_RUN_PATH=$(cat last_run_path.txt)
+          echo "Updating reference predictions using weights at $NEW_RUN_PATH..."
+          python src/monitoring/generate_reference.py --weights "$NEW_RUN_PATH/weights/best.pt"
+          
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add monitoring/reference_predictions.csv
+          git commit -m "chore: update reference baseline predictions after retraining" || true
+          git push origin HEAD:${{ steps.get_branch.outputs.branch }} || true
+        else
+          echo "No last_run_path.txt found. Skipping reference update."
+        fi
 
     - name: Generate Metrics Report and Post to GitHub PR
       env:
