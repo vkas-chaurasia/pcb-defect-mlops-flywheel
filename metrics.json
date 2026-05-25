@@ -1,6 +1,6 @@
 {
-    "metrics/precision_B": 0.0005466365919719235,
-    "metrics/recall_B": 0.07084986772486773,
-    "metrics/mAP50_B": 0.0001970175106854469,
-    "metrics/mAP50-95_B": 3.694026482747315e-05
+    "metrics/precision_B": 0.9418730540804118,
+    "metrics/recall_B": 0.9072986325382528,
+    "metrics/mAP50_B": 0.9634709998066561,
+    "metrics/mAP50-95_B": 0.685750106869867
 }
