@@ -58,9 +58,17 @@ def main():
 
     print("Initializing YOLO model...")
     model = YOLO(model_path)
+    
+    import torch
+    if torch.cuda.is_available():
+        device = 0
+    elif torch.backends.mps.is_available():
+        device = 'mps'
+    else:
+        device = 'cpu'
 
-    print("Starting evaluation on Golden Dataset (Validation Set)...")
-    results = model.val(data=DATASET_YAML, split='val', device='cpu')  # Using CPU for reliable CI eval
+    print(f"Starting evaluation on Golden Dataset (Validation Set) using device: {device}...")
+    results = model.val(data=DATASET_YAML, split='val', device=device)
 
     # Extract metrics
     metrics = results.results_dict
@@ -73,10 +81,10 @@ def main():
     print("-" * 40)
 
     if map50 < MIN_MAP50_THRESHOLD:
-        print(f"❌ EVALUATION FAILED: Model mAP50 ({map50:.4f}) is below the {MIN_MAP50_THRESHOLD} threshold!")
+        print(f"EVALUATION FAILED: Model mAP50 ({map50:.4f}) is below the {MIN_MAP50_THRESHOLD} threshold!")
         sys.exit(1)
 
-    print("✅ EVALUATION PASSED: Model meets quality standards.")
+    print("EVALUATION PASSED: Model meets quality standards.")
     sys.exit(0)
 
 if __name__ == "__main__":
