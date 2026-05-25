@@ -1,11 +1,12 @@
 name: Deploy to Production
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'deployment-repo/**'
+  workflow_dispatch:
+    inputs:
+      approval_reason:
+        description: 'Reason for approving deployment to production'
+        required: true
+        type: string
 
 jobs:
   promote-model:
