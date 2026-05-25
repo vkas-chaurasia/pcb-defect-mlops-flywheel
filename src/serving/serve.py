@@ -39,6 +39,7 @@ Usage
 import argparse
 import io
 import time
+import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -53,6 +54,7 @@ try:
     from fastapi.staticfiles import StaticFiles
     from pydantic import BaseModel
     import uvicorn
+    from src.monitoring.prediction_logger import PredictionLogger
 except ImportError:
     raise ImportError(
         "FastAPI stack not installed.\n"
@@ -240,6 +242,8 @@ app = FastAPI(
     version     = "1.0.0",
 )
 
+prediction_logger = PredictionLogger(os.getenv("PREDICTION_LOG_PATH", "monitoring/prediction_log.csv"))
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins  = ["*"],
@@ -247,8 +251,49 @@ app.add_middleware(
     allow_headers  = ["*"],
 )
 
+class CORSStaticFiles(StaticFiles):
+    async def __call__(self, scope, receive, send):
+        async def respond(message):
+            if message["type"] == "http.response.start":
+                headers = message.setdefault("headers", [])
+                headers.append((b"access-control-allow-origin", b"*"))
+                headers.append((b"access-control-allow-methods", b"*"))
+                headers.append((b"access-control-allow-headers", b"*"))
+            await send(message)
+        await super().__call__(scope, receive, respond)
+
 # Serve raw data for Label Studio (Zero-Config fix)
-app.mount("/data", StaticFiles(directory="data"), name="data")
+app.mount("/data", CORSStaticFiles(directory="data"), name="data")
+
+
+@app.on_event("startup")
+def start_polling_thread():
+    import threading
+    
+    def poll_champion_model():
+        import mlflow
+        import time
+        # Poll the Official Team MLflow (Port 5556) where Governance happens
+        mlflow.set_tracking_uri("http://localhost:5556")
+        
+        while True:
+            time.sleep(30)
+            try:
+                # Check for the @champion model
+                weights = mlflow.artifacts.download_artifacts(artifact_uri="models:/pcb-defect-model@champion/weights/best.pt")
+                if weights != ModelManager._weights:
+                    print(f"\n🔄 [HOT RELOAD] New @champion model detected in Registry!")
+                    print(f"Old path: {ModelManager._weights}")
+                    print(f"New path: {weights}")
+                    ModelManager.load(weights, ModelManager._img_size)
+                    print("✅ Hot reload complete. New Champion is live.")
+            except Exception:
+                # Fail silently if MLflow is unreachable or alias doesn't exist yet
+                pass
+
+    t = threading.Thread(target=poll_champion_model, daemon=True)
+    t.start()
+    print("Started background polling thread for @champion model (30s interval).")
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Monitoring"])
@@ -298,6 +343,7 @@ async def predict_single(
 
     try:
         response = run_inference(img_bgr, file.filename or "image.jpg", conf, iou)
+        prediction_logger.log(response)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Inference failed: {e}")
 
@@ -326,6 +372,7 @@ async def predict_batch(
         try:
             img_bgr = decode_image(raw)
             result  = run_inference(img_bgr, f.filename or "image.jpg", conf, iou)
+            prediction_logger.log(result)
         except Exception as e:
             # include a placeholder with error info rather than aborting the batch
             result = PredictionResponse(
@@ -390,7 +437,7 @@ def main(weights: str = None, host: str = "0.0.0.0", port: int = 8000,
         # 1. Try MLflow first (The Modern Human-Gatekeeper Way)
         try:
             import mlflow
-            mlflow.set_tracking_uri("http://localhost:5555")
+            mlflow.set_tracking_uri("http://localhost:5556")
             print("Checking MLflow Model Registry for '@champion' alias (Waiting for your Approval)...")
             # We look for the model with the '@champion' alias
             weights = mlflow.artifacts.download_artifacts(artifact_uri="models:/pcb-defect-model@champion/weights/best.pt")

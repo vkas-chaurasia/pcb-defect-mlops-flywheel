@@ -1,0 +1,46 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'deployment-repo/**'
+
+jobs:
+  promote-model:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup CI Environment
+        run: |
+          python3 -m venv .venv_deploy
+          .venv_deploy/bin/pip install mlflow
+          echo "$(pwd)/.venv_deploy/bin" >> $GITHUB_PATH
+
+      - name: Promote Model to Champion
+        env:
+          MLFLOW_TRACKING_URI: http://localhost:5556
+        run: |
+          cat << 'EOF' > promote.py
+          import json
+          from mlflow.tracking import MlflowClient
+
+          def main():
+              with open('deployment-repo/production_version.json', 'r') as f:
+                  data = json.load(f)
+              
+              model_name = data['model_name']
+              version = str(data['production_version'])
+              
+              client = MlflowClient()
+              print(f"Assigning @champion alias to {model_name} version {version}...")
+              client.set_registered_model_alias(name=model_name, alias="champion", version=version)
+              print("Successfully promoted to Production (Champion)!")
+
+          if __name__ == "__main__":
+              main()
+          EOF
+          python promote.py

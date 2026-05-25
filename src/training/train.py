@@ -4,6 +4,8 @@ import json
 import os
 import shutil
 import sys
+import csv
+import subprocess
 from pathlib import Path
 
 import cv2
@@ -136,6 +138,41 @@ def main():
             "batch": args.batch,
             "img_size": args.img_size,
         })
+        
+        # Log Git and DVC Metadata
+        try:
+            git_commit = subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.STDOUT).decode("utf-8").strip()
+            mlflow.set_tag("git_commit", git_commit)
+        except Exception:
+            pass
+            
+        try:
+            import yaml
+            from mlflow.data.dataset import Dataset
+            from mlflow.data.http_dataset_source import HTTPDatasetSource
+            
+            with open("dvc.lock", "r") as f:
+                dvc_lock = yaml.safe_load(f)
+                for out in dvc_lock.get("stages", {}).get("preprocess", {}).get("outs", []):
+                    if out.get("path") == "data/processed":
+                        dvc_hash = out.get("md5")
+                        
+                        # Log formal Dataset to MLflow UI
+                        source = HTTPDatasetSource("s3://dvc-storage/data/processed")
+                        dataset = Dataset(source=source, name="pcb-defect-images", digest=dvc_hash)
+                        mlflow.log_input(dataset, context="training")
+                        
+                        # Keep the tag for easy filtering in the table view
+                        mlflow.set_tag("dataset_hash", dvc_hash)
+                        break
+        except Exception as e:
+            print(f"Failed to log DVC Dataset: {e}")
+            
+        # Log Environment Artifacts
+        if Path("pyproject.toml").exists():
+            mlflow.log_artifact("pyproject.toml")
+        if Path("uv.lock").exists():
+            mlflow.log_artifact("uv.lock")
 
         results = model.train(
             data=str(yaml_path),
@@ -152,9 +189,10 @@ def main():
         if _uri:
             os.environ["MLFLOW_TRACKING_URI"] = _uri
 
-        # Save metrics for DVC
+        # Save meaningful metrics for DVC and MLflow
         metrics = results.results_dict
-        clean_metrics = {k.replace("(", "_").replace(")", ""): v for k, v in metrics.items()}
+        meaningful_keys = ["metrics/precision(B)", "metrics/recall(B)", "metrics/mAP50(B)", "metrics/mAP50-95(B)"]
+        clean_metrics = {k.replace("(", "_").replace(")", ""): v for k, v in metrics.items() if k in meaningful_keys}
         mlflow.log_metrics(clean_metrics)
         
         with open("metrics.json", "w") as f:
@@ -162,6 +200,19 @@ def main():
 
         # Log the formal PyTorch model (Master branch pattern)
         yolo_run_dir = RUNS_DIR / "pcb-defect-detection" / run_name
+        
+        # --- Time-Series Metrics Logging ---
+        results_csv = yolo_run_dir / "results.csv"
+        if results_csv.exists():
+            print("Logging time-series metrics from results.csv...")
+            with open(results_csv, "r") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    cleaned_row = {k.strip().replace("(", "_").replace(")", ""): float(v.strip()) for k, v in row.items() if v.strip() and k.strip() != "epoch"}
+                    step = int(float(row.get("epoch", row.get("                  epoch", 0))))
+                    if step > 0 or "epoch" in "".join(row.keys()): # Ensure it's valid
+                        mlflow.log_metrics(cleaned_row, step=step)
+        
         best_pt = yolo_run_dir / "weights" / "best.pt"
         
         if best_pt.exists():
@@ -191,6 +242,11 @@ def main():
                 f.write(f"EXP_ID={exp.experiment_id}\n")
                 f.write(f"RUN_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}/runs/{run_id}\n")
                 f.write(f"EXP_URL={MLFLOW_URI}/#/experiments/{exp.experiment_id}\n")
+                
+            # Save persistent metadata to be committed to Git
+            os.makedirs("models", exist_ok=True)
+            with open("models/model_meta.json", "w") as f:
+                json.dump({"RUN_ID": run_id, "EXP_ID": exp.experiment_id}, f, indent=4)
 
         # Ensure DVC sees the history folder exists (to avoid errors)
         os.makedirs(PROJECT_ROOT / "mlflow-history", exist_ok=True)

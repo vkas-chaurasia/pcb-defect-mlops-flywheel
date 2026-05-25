@@ -8,7 +8,7 @@ on:
   push:
     branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
@@ -17,17 +17,31 @@ permissions:
 jobs:
   validate-pipeline:
     runs-on: self-hosted
+    if: >
+      github.event_name == 'push' ||
+      github.event_name == 'pull_request'
     permissions:
       contents: write
       pull-requests: write
 
     steps:
+    - name: Determine Branch
+      id: get_branch
+      run: |
+        if [ "${{ github.event_name }}" = "push" ]; then
+          echo "branch=main" >> $GITHUB_OUTPUT
+        elif [ "${{ github.event_name }}" = "pull_request" ]; then
+          echo "branch=${{ github.event.pull_request.head.ref }}" >> $GITHUB_OUTPUT
+        else
+          echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+        fi
+
     - name: Checkout Repository
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
         clean: false
-        ref: ${{ github.head_ref || github.ref_name }}
+        ref: ${{ steps.get_branch.outputs.branch }}
 
     - name: Setup Safe CI Environment (macOS)
       run: |
@@ -39,15 +53,12 @@ jobs:
     - name: Setup CML
       uses: iterative/setup-cml@v2
 
-    - name: Create Virtual Environment
+    - name: Create Virtual Environment and Install Dependencies
       run: |
-        python3 -m venv .venv_ci
-        echo "$GITHUB_WORKSPACE/.venv_ci/bin" >> $GITHUB_PATH
-
-    - name: Install Dependencies
-      run: |
-        pip install --upgrade pip
-        pip install -r requirements.txt
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        export PATH="$HOME/.cargo/bin:$PATH"
+        uv sync
+        echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
 
     - name: Infrastructure Health Check
       run: |
@@ -78,9 +89,39 @@ jobs:
         AWS_SECRET_ACCESS_KEY: rustfsadmin
       run: |
         echo "MLflow Tracking URI: $MLFLOW_TRACKING_URI"
-        rm -f dvc.lock .dvc/tmp/lock || true
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          echo "Forcing retrain for Pull Request..."
+          rm -f dvc.lock .dvc/tmp/lock || true
+        fi
         dvc repro
         dvc push
+
+    - name: Update Reference Baseline Predictions
+      run: |
+        if [ -f last_run_path.txt ]; then
+          NEW_RUN_PATH=$(cat last_run_path.txt)
+          echo "Updating reference predictions using weights at $NEW_RUN_PATH..."
+          python src/monitoring/generate_reference.py --weights "$NEW_RUN_PATH/weights/best.pt"
+          
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f monitoring/reference_predictions.csv dvc.lock models/model_meta.json
+          git commit -m "chore: update reference baseline predictions and candidate model state after retraining" || true
+          git push origin HEAD:${{ steps.get_branch.outputs.branch }} || true
+        else
+          echo "No last_run_path.txt found. Skipping reference update."
+        fi
+
+    - name: Register Staging Model
+      if: github.event_name == 'push'
+      env:
+        MLFLOW_TRACKING_URI: http://localhost:5556
+      run: |
+        if [ -f models/model_meta.json ]; then
+          python src/utils/register_model.py
+        else
+          echo "No models/model_meta.json found. Skipping registration."
+        fi
 
     - name: Generate Metrics Report and Post to GitHub PR
       env:
@@ -121,8 +162,8 @@ jobs:
           cml publish "$REL_RUN_PATH/BoxF1_curve.png" --md >> report.md
           cml publish "$REL_RUN_PATH/BoxPR_curve.png" --md >> report.md
           
-          echo "#### Confusion Matrix" >> report.md
-          cml publish "$REL_RUN_PATH/confusion_matrix.png" --md >> report.md
+          echo "#### Confusion Matrix (Normalized)" >> report.md
+          cml publish "$REL_RUN_PATH/confusion_matrix_normalized.png" --md >> report.md
         fi
         
         # Update existing comment or create new one with watermark
