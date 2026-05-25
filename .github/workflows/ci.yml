@@ -53,15 +53,12 @@ jobs:
     - name: Setup CML
       uses: iterative/setup-cml@v2
 
-    - name: Create Virtual Environment
+    - name: Create Virtual Environment and Install Dependencies
       run: |
-        python3 -m venv .venv_ci
-        echo "$GITHUB_WORKSPACE/.venv_ci/bin" >> $GITHUB_PATH
-
-    - name: Install Dependencies
-      run: |
-        pip install --upgrade pip
-        pip install -r requirements.txt
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        export PATH="$HOME/.cargo/bin:$PATH"
+        uv sync
+        echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
 
     - name: Infrastructure Health Check
       run: |
