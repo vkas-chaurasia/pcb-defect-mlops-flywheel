@@ -20,7 +20,7 @@ stages:
       size: 22531045
       nfiles: 4
   train:
-    cmd: python3 src/training/train.py --epochs 10 --img-size 224 --batch 16
+    cmd: python3 src/training/train.py --epochs 20 --img-size 224 --batch 16
     deps:
     - path: data/processed
       hash: md5
@@ -39,5 +39,5 @@ stages:
       nfiles: 2993
     - path: metrics.json
       hash: md5
-      md5: 8c45f81cda64117e7413304ffc17f3f8
-      size: 182
+      md5: 21099195d4b83ebd8a01f2ec6f09b2f3
+      size: 181
