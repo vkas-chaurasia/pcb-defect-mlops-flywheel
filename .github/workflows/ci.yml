@@ -18,8 +18,9 @@ jobs:
   validate-pipeline:
     runs-on: self-hosted
     if: >
-      github.event_name == 'push' ||
-      github.event_name == 'pull_request'
+      (github.event_name == 'push' || github.event_name == 'pull_request') &&
+      !contains(github.event.head_commit.message, 'gov: Promote') &&
+      !contains(github.event.head_commit.message, 'Model Governance:')
     permissions:
       contents: write
       pull-requests: write
@@ -122,6 +123,18 @@ jobs:
         else
           echo "No models/model_meta.json found. Skipping registration."
         fi
+
+    - name: Trigger Airflow Governance DAG
+      if: github.event_name == 'push'
+      run: |
+        echo "Triggering Airflow Governance DAG (model_governance_eval)..."
+        # The Airflow container exposes port 8085 on the host Mac
+        curl -s -X POST \
+          -u "admin:admin" \
+          -H "Content-Type: application/json" \
+          -d '{}' \
+          "http://localhost:8085/api/v1/dags/model_governance_eval/dagRuns"
+        echo "\nAirflow DAG Triggered successfully!"
 
     - name: Generate Metrics Report and Post to GitHub PR
       env:

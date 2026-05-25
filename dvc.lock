@@ -1,7 +1,7 @@
 schema: '2.0'
 stages:
   preprocess:
-    cmd: python3 src/data/preprocess.py --img-size 640 --raw-dir data/raw 
+    cmd: python3 src/data/preprocess.py --img-size 224 --raw-dir data/raw 
       --out-dir data/processed
     deps:
     - path: data/raw
@@ -16,28 +16,28 @@ stages:
     outs:
     - path: data/processed
       hash: md5
-      md5: 62fb04cc0b7539be90c5c7e4cd19e3fe.dir
-      size: 108732755
+      md5: e45b32a56737e3eedb58247ff4738eba.dir
+      size: 22531045
       nfiles: 4
   train:
-    cmd: python3 src/training/train.py --epochs 10 --img-size 640 --batch 16
+    cmd: python3 src/training/train.py --epochs 10 --img-size 224 --batch 16
     deps:
     - path: data/processed
       hash: md5
-      md5: 62fb04cc0b7539be90c5c7e4cd19e3fe.dir
-      size: 108732755
+      md5: e45b32a56737e3eedb58247ff4738eba.dir
+      size: 22531045
       nfiles: 4
     - path: src/training/train.py
       hash: md5
-      md5: 4bfa869eb454e0c9b53f7e2431a8f81f
-      size: 10290
+      md5: 33dfd74ee6fc31902231c26103ad63be
+      size: 10460
     outs:
     - path: data/yolo
       hash: md5
-      md5: 3b2864bec24d5e21a72700863e3c9765.dir
-      size: 82645792
+      md5: 5d845e22dcff959ff3749fa411fac0d7.dir
+      size: 23708121
       nfiles: 2993
     - path: metrics.json
       hash: md5
-      md5: 07dc353c5aced7bffacdd948991d5b22
-      size: 181
+      md5: 8c45f81cda64117e7413304ffc17f3f8
+      size: 182

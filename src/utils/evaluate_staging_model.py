@@ -10,6 +10,7 @@ import shutil
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5556")
 MODEL_NAME = "pcb-defect-model"
 DATASET_YAML = "data/yolo/dataset.yaml"
+# Strict threshold for governance gate
 MIN_MAP50_THRESHOLD = 0.70
 
 def main():
@@ -29,23 +30,9 @@ def main():
     # Download the artifact
     print("Downloading model weights from MLflow Artifact Store...")
     try:
-        # We download the entire pcb-yolo-model artifact dir which contains the .pt file
-        artifact_path = client.download_artifacts(mv.run_id, "pcb-yolo-model")
-        # MLflow saves the PyTorch YOLO model in a specific sub-path depending on how it was logged,
-        # usually under data/model.pt or we can just pull best.pt from the run itself.
-        # Wait, in train.py we used mlflow.register_model(f"runs:/{run_id}/pcb-yolo-model", model_name)
-        # Actually, ultralytics saves the model inside the mlflow artifact directory.
-        # Let's dynamically find the .pt file
-        pt_files = list(Path(artifact_path).rglob("*.pt"))
-        if not pt_files:
-            # Maybe it's a pyfunc model? If so, we need to extract the underlying weights.
-            # Ultralytics mlflow logging stores the weights in 'model.pt' inside 'artifacts' or 'data'.
-            model_path = os.path.join(artifact_path, "data", "model.pt")
-            if not os.path.exists(model_path):
-                print(f"Error: Could not locate .pt file inside downloaded artifact {artifact_path}")
-                sys.exit(1)
-        else:
-            model_path = str(pt_files[0])
+        # In train.py, we used mlflow.log_artifacts to upload the raw YOLO run directory.
+        # This means the native YOLO .pt file is located exactly at "weights/best.pt" in the artifact root!
+        model_path = client.download_artifacts(mv.run_id, "weights/best.pt")
             
         print(f"Model downloaded successfully to {model_path}")
     except Exception as e:
