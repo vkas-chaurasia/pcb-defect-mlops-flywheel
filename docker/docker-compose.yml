@@ -16,7 +16,7 @@ services:
       - ../mlflow-history:/mlflow/data
     command: mlflow server --host 0.0.0.0 --backend-store-uri sqlite:////mlflow/data/mlflow.db --default-artifact-root mlflow-artifacts:/ --serve-artifacts
 
-  # Official MLflow for Team/Professor
+  # Official MLflow for Team
   mlflow-official:
     image: ghcr.io/mlflow/mlflow:latest
     container_name: mlflow-official
