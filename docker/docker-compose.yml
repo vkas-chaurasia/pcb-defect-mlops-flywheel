@@ -88,6 +88,7 @@ services:
       - DVC_REMOTE_MODELS_STORAGE_ENDPOINTURL=http://rustfs:9000
       - AWS_ACCESS_KEY_ID=rustfsadmin
       - AWS_SECRET_ACCESS_KEY=rustfsadmin
+      - MLFLOW_TRACKING_URI=http://mlflow-official:5000
     volumes:
       - ..:/opt/airflow/project
     working_dir: /opt/airflow/project

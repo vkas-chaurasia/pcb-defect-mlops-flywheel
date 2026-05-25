@@ -12,7 +12,7 @@ import mlflow
 from mlflow.tracking import MlflowClient
 
 # Configuration
-MLFLOW_TRACKING_URI = "http://localhost:5556"  # Official MLflow
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5556")  # Official MLflow
 MODEL_NAME = "pcb-defect-model"
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_REPO = os.getenv("GITHUB_REPO", "owner/repo") # Make sure this is set in docker-compose if we really want it to work
