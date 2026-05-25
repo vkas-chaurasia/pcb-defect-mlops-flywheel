@@ -17,7 +17,12 @@ def main():
     parser.add_argument("--out-csv", default="monitoring/reference_predictions.csv")
     args = parser.parse_args()
 
-    ModelManager.load(args.weights, 640)
+    import yaml
+    with open("params.yaml", "r") as f:
+        params = yaml.safe_load(f)
+    img_size = params["train"]["img_size"]
+
+    ModelManager.load(args.weights, img_size)
     logger = PredictionLogger(log_path=args.out_csv)
     img_dir = Path(args.img_dir)
     
