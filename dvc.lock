@@ -29,8 +29,12 @@ stages:
       nfiles: 4
     - path: src/training/train.py
       hash: md5
-      md5: 33dfd74ee6fc31902231c26103ad63be
-      size: 10460
+      md5: 36148a31e4e6d5658fe4eb4e81b33a80
+      size: 10619
+    params:
+      params.yaml:
+        train.epochs: 20
+        train.img_size: 224
     outs:
     - path: data/yolo
       hash: md5
