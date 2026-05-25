@@ -224,7 +224,7 @@ def main():
             
             # Export to ONNX
             # dynamic=False is often safer for YOLO inference unless specifically needed
-            onnx_path = model.export(format="onnx")
+            onnx_path = model.export(format="onnx", device="cpu")
             
             print(f"Logging ONNX model to MLflow from {onnx_path}...")
             # We log the raw ONNX file as an artifact. 
