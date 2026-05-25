@@ -251,8 +251,19 @@ app.add_middleware(
     allow_headers  = ["*"],
 )
 
+class CORSStaticFiles(StaticFiles):
+    async def __call__(self, scope, receive, send):
+        async def respond(message):
+            if message["type"] == "http.response.start":
+                headers = message.setdefault("headers", [])
+                headers.append((b"access-control-allow-origin", b"*"))
+                headers.append((b"access-control-allow-methods", b"*"))
+                headers.append((b"access-control-allow-headers", b"*"))
+            await send(message)
+        await super().__call__(scope, receive, respond)
+
 # Serve raw data for Label Studio (Zero-Config fix)
-app.mount("/data", StaticFiles(directory="data"), name="data")
+app.mount("/data", CORSStaticFiles(directory="data"), name="data")
 
 
 @app.on_event("startup")

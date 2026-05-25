@@ -12,7 +12,7 @@ This repository implements a production-grade MLOps ecosystem for automated PCB 
 | **Inference API** | [FastAPI](https://fastapi.tiangolo.com/) | High-performance model serving (Port 8000) with integrated prediction logging. |
 | **Frontend** | [Streamlit](https://streamlit.io/) | Interactive sandbox for real-time defect analysis (Port 8501). |
 | **Orchestration** | [Docker Compose](https://www.docker.com/) | Unified management of all infrastructure services. |
-| **Workflow / Monitoring**| [Airflow](https://airflow.apache.org/) | Workflow orchestration (Port 8081), automating label synchronization and scheduled data drift monitoring. |
+| **Workflow / Monitoring**| [Airflow](https://airflow.apache.org/) | Workflow orchestration (Port 8085), automating label synchronization and scheduled data drift monitoring. |
 | **Tracking** | [MLflow](https://mlflow.org/) | Dual-instance tracking for Sandbox (5555) and Official (5556) runs. |
 | **Annotation** | [Label Studio](https://labelstud.io/) | Active learning and dataset refinement (Port 8080). |
 | **Versioning** | [DVC](https://dvc.org/) | Large data and model versioning with S3-compatible backends. |
@@ -30,34 +30,48 @@ cd pcb-defect-mlops-flywheel
 ```
 
 ### 2. Infrastructure Prerequisite (Docker)
-This project uses a self-hosted CI/CD architecture. Before running any local scripts or triggering CI/CD, the Docker services MUST be running:
+This project uses a self-hosted CI/CD architecture. Before running any local scripts or triggering CI/CD, the environment must be configured and Docker Desktop must be running:
+
+1. **Configure `.env`**: Ensure a `.env` file is present in the root directory and contains the `GITHUB_TOKEN` and `GITHUB_REPO` variables (required for Airflow to open Pull Requests).
+2. **Launch the Infrastructure**:
 ```bash
-# Launch the Flywheel Infrastructure
-docker compose -f docker/docker-compose.yml up -d
+docker compose --env-file .env -f docker/docker-compose.yml up -d
 ```
 *Note: The self-hosted CI/CD runner communicates with these containers via localhost. If they are not running, the pipeline will fail its health checks.*
 
-### 3. Access the Ecosystem
-Available services:
-- **FastAPI Docs**: http://localhost:8000/docs
-- **Streamlit UI**: http://localhost:8501
-- **Airflow UI**: http://localhost:8081 (admin / admin)
+### 3. Access the Docker Infrastructure
+The following core services are now running via Docker:
+- **Airflow UI**: http://localhost:8085 (admin / admin)
 - **MLflow (Sandbox)**: http://localhost:5555
 - **MLflow (Official)**: http://localhost:5556
 - **Label Studio**: http://localhost:8080 (Admin: admin@example.com / mlops123)
+- **RustFS S3 Console**: http://localhost:9001 (rustfsadmin / rustfsadmin)
+
+*(Note: The FastAPI Server and Streamlit UI are run locally via Python scripts later in the workflow, not via Docker).*
 
 ### 4. Local Environment Setup
 Initialize Python environment and download data:
 ```bash
-# Initialize Virtual Environment (using UV or Pip)
-uv sync  # Recommended
-# OR: python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+# Initialize Virtual Environment & Install Dependencies (using UV)
+uv sync
+# (Optional) To manually activate the shell environment: source .venv/bin/activate
 
-# Synchronize Data & Models
-dvc pull
 ```
 
-### 5. Starting the Self-Hosted Runner (For CI/CD)
+### 5. Start Local Python Services
+The FastAPI backend and Streamlit frontend must be started in separate terminals:
+
+```bash
+# 1. Start FastAPI Inference Server
+uv run python -m src.serving.serve
+# API Docs available at: http://localhost:8000/docs
+
+# 2. Start Streamlit Frontend (In a new terminal)
+uv run python -m streamlit run src/app/main.py
+# Sandbox UI available at: http://localhost:8501
+```
+
+### 6. Starting the Self-Hosted Runner (For CI/CD)
 To use the automated GitHub CI/CD pipelines, a local runner is required:
 1. Go to the GitHub repository -> **Settings** -> **Actions** -> **Runners**.
 2. Click **New self-hosted runner** and follow the instructions to download and configure it.
@@ -71,8 +85,9 @@ To use the automated GitHub CI/CD pipelines, a local runner is required:
 ## The Complete MLOps Flywheel Workflow
 
 ### Phase 1: Training and Validation
-Execute the pipeline with DVC to establish the baseline model.
+Pull the raw data and execute the pipeline with DVC to establish the baseline model.
 ```bash
+dvc pull
 dvc repro
 ```
 - **Local Dev**: Logs results to Port 5555 (Local Sandbox MLflow).

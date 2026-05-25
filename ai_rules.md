@@ -53,5 +53,13 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+## 5. Professional Tone & Documentation
+**Maintain a neutral, objective voice in all project writing.**
+
+When writing documentation, READMEs, or code comments:
+- Never use second-person pronouns ("you", "your", "yours").
+- Write in the third person or use the passive voice (e.g. "The environment must be configured", rather than "You must configure your environment").
+- Keep instructions direct, clear, and professional.
+
 ---
 *These guidelines are working if: fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.*
