@@ -1,5 +1,7 @@
 import os
 import sys
+import yaml
+import torch
 from pathlib import Path
 import mlflow
 from mlflow.tracking import MlflowClient
@@ -27,12 +29,11 @@ def main():
 
     print(f"Found @staging model: Version {mv.version} (Run ID: {mv.run_id})")
 
-    # Download the artifact
-    print("Downloading model weights from MLflow Artifact Store...")
+    # Download best.onnx — exported on CPU so it is hardware-agnostic and
+    # works identically on Mac, Linux, and inside Docker/Airflow.
+    print("Downloading model weights (best.onnx) from MLflow Artifact Store...")
     try:
-        # We now log the ONNX model under the pcb-yolo-model path
         model_path = client.download_artifacts(mv.run_id, "pcb-yolo-model/best.onnx")
-            
         print(f"Model downloaded successfully to {model_path}")
     except Exception as e:
         print(f"Error downloading artifacts: {e}")
@@ -42,25 +43,18 @@ def main():
         print(f"Error: Dataset YAML not found at {DATASET_YAML}. Ensure preprocessing has run.")
         sys.exit(1)
 
-    print("Initializing YOLO model...")
-    model = YOLO(model_path)
-    
-    import torch
-    import yaml
-    
-    # ONNX models require explicit imgsz during validation
+    # Read img_size from params.yaml to match training configuration
     with open("params.yaml", "r") as f:
         params = yaml.safe_load(f)
     img_size = params["train"]["img_size"]
 
-    if torch.cuda.is_available():
-        device = 0
-    elif torch.backends.mps.is_available():
-        device = 'mps'
-    else:
-        device = 'cpu'
+    # Use CPU for evaluation so results are deterministic across Mac/Linux/Docker
+    device = 'cpu'
 
-    print(f"Starting evaluation on Golden Dataset (Validation Set) using device: {device} and imgsz={img_size}...")
+    print(f"Initializing YOLO model from {model_path}...")
+    model = YOLO(model_path)
+
+    print(f"Starting evaluation on Golden Dataset using device={device}, imgsz={img_size}...")
     results = model.val(data=DATASET_YAML, split='val', device=device, imgsz=img_size)
 
     # Extract metrics
@@ -69,7 +63,9 @@ def main():
 
     print("-" * 40)
     print("EVALUATION RESULTS")
-    print(f"mAP50: {map50:.4f}")
+    print(f"mAP50:     {map50:.4f}")
+    print(f"Precision: {metrics.get('metrics/precision(B)', 0.0):.4f}")
+    print(f"Recall:    {metrics.get('metrics/recall(B)', 0.0):.4f}")
     print(f"Required Threshold: {MIN_MAP50_THRESHOLD}")
     print("-" * 40)
 
