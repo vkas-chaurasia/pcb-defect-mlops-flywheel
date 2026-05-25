@@ -85,11 +85,28 @@ To use the automated GitHub CI/CD pipelines, a local runner is required:
 ## The Complete MLOps Flywheel Workflow
 
 ### Phase 1: Training and Validation
-Pull the raw data and execute the pipeline with DVC to establish the baseline model.
+Pull the raw data from local S3 storage:
 ```bash
 dvc pull
-dvc repro
 ```
+
+**Execution Strategies:**
+- **Fast Iteration (Flexible)**: Developers can manually run `uv run python src/training/train.py` for quick debugging. This bypasses DVC and logs directly to the local Sandbox MLflow (Port 5555).
+- **Pipeline Verification (Recommended)**: Before opening a Pull Request, verify your `params.yaml` is set correctly, then run `dvc repro` locally. Since CI/CD relies strictly on `params.yaml`, any command-line flags you used during fast iteration will be ignored by the CI pipeline! 
+- **Adding New Data (Strict)**: If you added new images, you **must** update the dataset pointer before pushing:
+  ```bash
+  dvc commit data/raw
+  dvc push
+  ```
+
+```bash
+# Execute the strict pipeline before committing
+dvc repro
+
+# Commit the updated contract!
+git add dvc.lock params.yaml
+```
+
 - **Local Dev**: Logs results to Port 5555 (Local Sandbox MLflow).
 - **CI/CD Retraining**: Logs results to Port 5556 (Official Team MLflow). The retraining pipeline triggers automatically whenever a Pull Request is opened or updated.
   The CI pipeline dynamically resolves the branch, runs `dvc repro`, and posts a visual report (Confusion Matrix, F1-Curves) as a PR comment.

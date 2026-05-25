@@ -1,7 +1,7 @@
 services:
   # Unified MLflow Instance
   mlflow:
-    image: ghcr.io/mlflow/mlflow:v2.11.3
+    image: ghcr.io/mlflow/mlflow:v2.22.1
     container_name: mlflow
     user: "501:20"
     ports:
@@ -18,7 +18,7 @@ services:
 
   # Official MLflow for Team
   mlflow-official:
-    image: ghcr.io/mlflow/mlflow:v2.11.3
+    image: ghcr.io/mlflow/mlflow:v2.22.1
     container_name: mlflow-official
     user: "501:20"
     ports:

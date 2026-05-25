@@ -165,8 +165,8 @@ jobs:
           cml publish "$REL_RUN_PATH/BoxF1_curve.png" --md >> report.md
           cml publish "$REL_RUN_PATH/BoxPR_curve.png" --md >> report.md
           
-          echo "#### Confusion Matrix" >> report.md
-          cml publish "$REL_RUN_PATH/confusion_matrix.png" --md >> report.md
+          echo "#### Confusion Matrix (Normalized)" >> report.md
+          cml publish "$REL_RUN_PATH/confusion_matrix_normalized.png" --md >> report.md
         fi
         
         # Update existing comment or create new one with watermark
