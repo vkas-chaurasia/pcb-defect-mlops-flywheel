@@ -57,10 +57,15 @@ with DAG(
         if status in ["passed", "failed"]:
             raise AirflowSkipException(f"Staging model v{mv.version} was already evaluated (Status: {status}). Skipping.")
         
-        # MOCK EVALUATION: 
-        # In reality, we'd load the model, run inference on a holdout set,
-        # and check fairness/accuracy constraints.
-        passed_evaluation = True 
+        # REAL EVALUATION: Execute the industry-standard YOLO validation script
+        import subprocess
+        print(f"Executing PyTorch evaluation script against Golden Dataset...")
+        
+        # We need to run the script using the uv python environment if possible
+        # but standard python is fine if uv environment is active.
+        result = subprocess.run(["python", "src/utils/evaluate_staging_model.py"])
+        
+        passed_evaluation = (result.returncode == 0)
         
         # 2. State Machine: Record the outcome
         if not passed_evaluation:
