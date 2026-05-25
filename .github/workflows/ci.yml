@@ -90,10 +90,6 @@ jobs:
         AWS_SECRET_ACCESS_KEY: rustfsadmin
       run: |
         echo "MLflow Tracking URI: $MLFLOW_TRACKING_URI"
-        if [ "${{ github.event_name }}" = "pull_request" ]; then
-          echo "Forcing retrain for Pull Request..."
-          rm -f dvc.lock .dvc/tmp/lock || true
-        fi
         dvc repro
         dvc push
 

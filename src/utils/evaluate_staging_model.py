@@ -46,6 +46,13 @@ def main():
     model = YOLO(model_path)
     
     import torch
+    import yaml
+    
+    # ONNX models require explicit imgsz during validation
+    with open("params.yaml", "r") as f:
+        params = yaml.safe_load(f)
+    img_size = params["train"]["img_size"]
+
     if torch.cuda.is_available():
         device = 0
     elif torch.backends.mps.is_available():
@@ -53,8 +60,8 @@ def main():
     else:
         device = 'cpu'
 
-    print(f"Starting evaluation on Golden Dataset (Validation Set) using device: {device}...")
-    results = model.val(data=DATASET_YAML, split='val', device=device)
+    print(f"Starting evaluation on Golden Dataset (Validation Set) using device: {device} and imgsz={img_size}...")
+    results = model.val(data=DATASET_YAML, split='val', device=device, imgsz=img_size)
 
     # Extract metrics
     metrics = results.results_dict

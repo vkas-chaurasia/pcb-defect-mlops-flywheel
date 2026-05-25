@@ -29,8 +29,8 @@ stages:
       nfiles: 4
     - path: src/training/train.py
       hash: md5
-      md5: 36148a31e4e6d5658fe4eb4e81b33a80
-      size: 10619
+      md5: 5cc9bdec17541977b58dea087dd13c32
+      size: 10633
     params:
       params.yaml:
         train.epochs: 20
