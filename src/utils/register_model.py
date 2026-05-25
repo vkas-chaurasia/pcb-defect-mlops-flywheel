@@ -25,6 +25,18 @@ def main():
     artifact_path = "pcb-yolo-model"
     model_uri = f"runs:/{run_id}/{artifact_path}"
 
+    print(f"Checking if run {run_id} is already registered as @staging...")
+    client = MlflowClient()
+    
+    try:
+        staging_mv = client.get_model_version_by_alias(model_name, "staging")
+        if staging_mv.run_id == run_id:
+            print(f"Skipping registration: Run {run_id} is already registered as version {staging_mv.version} and aliased as @staging.")
+            sys.exit(0)
+    except Exception:
+        # Alias doesn't exist yet, which is fine, proceed to register
+        pass
+
     print(f"Registering model from run {run_id} as {model_name}...")
     
     # Register the model (creates a new version if model_name exists)

@@ -1,7 +1,7 @@
 services:
   # Unified MLflow Instance
   mlflow:
-    image: ghcr.io/mlflow/mlflow:v2.22.1
+    image: ghcr.io/mlflow/mlflow:v2.11.3
     container_name: mlflow
     user: "501:20"
     ports:
@@ -18,7 +18,7 @@ services:
 
   # Official MLflow for Team
   mlflow-official:
-    image: ghcr.io/mlflow/mlflow:v2.22.1
+    image: ghcr.io/mlflow/mlflow:v2.11.3
     container_name: mlflow-official
     user: "501:20"
     ports:
@@ -92,4 +92,3 @@ services:
       - ..:/opt/airflow/project
     working_dir: /opt/airflow/project
     command: bash -c "airflow db migrate && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true && airflow standalone"
-
