@@ -92,4 +92,4 @@ services:
     volumes:
       - ..:/opt/airflow/project
     working_dir: /opt/airflow/project
-    command: bash -c "airflow db migrate && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true && airflow standalone"
+    command: bash -c "pip install pandas numpy requests label-studio-sdk python-dotenv dvc[s3] mlflow ultralytics && airflow db migrate && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true && airflow standalone"
