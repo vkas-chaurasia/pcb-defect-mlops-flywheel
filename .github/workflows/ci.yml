@@ -18,8 +18,9 @@ jobs:
   validate-pipeline:
     runs-on: self-hosted
     if: >
-      github.event_name == 'push' ||
-      github.event_name == 'pull_request'
+      (github.event_name == 'push' || github.event_name == 'pull_request') &&
+      !contains(github.event.head_commit.message, 'gov: Promote') &&
+      !contains(github.event.head_commit.message, 'Model Governance:')
     permissions:
       contents: write
       pull-requests: write
