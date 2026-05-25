@@ -221,7 +221,14 @@ def main():
             strip_optimizer(best_pt) # <--- Fixes MPS weights corruption on Linux CPU!
             
             import torch
-            ckpt = torch.load(best_pt, weights_only=False)
+            # CRITICAL FIX: strip_optimizer casts the model to FP16. 
+            # FP16 inference on CPU causes all zeros/NaNs resulting in 0.00 mAP!
+            # We MUST cast it back to FP32 before registering to MLflow.
+            ckpt = torch.load(best_pt, map_location="cpu", weights_only=False)
+            if hasattr(ckpt.get('model'), 'float'):
+                ckpt['model'].float()
+            torch.save(ckpt, best_pt)
+
             brain = ckpt['model']
             
             
