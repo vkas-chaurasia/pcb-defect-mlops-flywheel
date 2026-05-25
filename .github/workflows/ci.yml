@@ -93,8 +93,10 @@ jobs:
         if [ "${{ github.event_name }}" = "pull_request" ]; then
           echo "Forcing retrain for Pull Request..."
           rm -f dvc.lock .dvc/tmp/lock || true
+          dvc repro -f
+        else
+          dvc repro
         fi
-        dvc repro
         dvc push
 
     - name: Update Reference Baseline Predictions
