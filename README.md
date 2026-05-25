@@ -9,6 +9,7 @@ This repository implements a production-grade MLOps ecosystem for automated PCB 
 | Component | Technology | Role |
 | :--- | :--- | :--- |
 | **Detection** | [YOLOv8](https://ultralytics.com/) | State-of-the-art object detection for 6 defect types. |
+| **Model Format** | [ONNX](https://onnx.ai/) | Universal, hardware-agnostic computation graph (resolves Mac vs Linux inference bugs). |
 | **Inference API** | [FastAPI](https://fastapi.tiangolo.com/) | High-performance model serving (Port 8000) with integrated prediction logging. |
 | **Frontend** | [Streamlit](https://streamlit.io/) | Interactive sandbox for real-time defect analysis (Port 8501). |
 | **Orchestration** | [Docker Compose](https://www.docker.com/) | Unified management of all infrastructure services. |
@@ -110,7 +111,7 @@ git add dvc.lock params.yaml
 - **Local Dev**: Logs results to Port 5555 (Local Sandbox MLflow).
 - **CI/CD Retraining**: Logs results to Port 5556 (Official Team MLflow). The retraining pipeline triggers automatically whenever a Pull Request is opened or updated.
   The CI pipeline dynamically resolves the branch, runs `dvc repro`, and posts a visual report (Confusion Matrix, F1-Curves) as a PR comment.
-- **Merge to Main**: When the PR is merged to `main`, the CI pipeline automatically registers the model to the MLflow Model Registry and applies the `@staging` alias.
+- **Merge to Main**: When the PR is merged to `main`, the CI pipeline automatically exports the model to the **ONNX format**, registers the `best.onnx` artifact to the MLflow Model Registry, and applies the `@staging` alias. This guarantees the model will run flawlessly on any CPU architecture.
 
 ### Phase 2: Model Governance & GitOps Promotion
 Before a model reaches production, it must pass governance:

@@ -216,20 +216,20 @@ def main():
         best_pt = yolo_run_dir / "weights" / "best.pt"
         
         if best_pt.exists():
-            print("Logging formal PyTorch model flavor...")
-            from ultralytics.utils.torch_utils import strip_optimizer
-            strip_optimizer(best_pt) # <--- Fixes MPS weights corruption on Linux CPU!
+            print("Exporting model to ONNX format for universal compatibility...")
+            from ultralytics import YOLO
             
-            import torch
-            ckpt = torch.load(best_pt, weights_only=False)
-            brain = ckpt['model']
+            # Load the PyTorch model
+            model = YOLO(best_pt)
             
+            # Export to ONNX
+            # dynamic=False is often safer for YOLO inference unless specifically needed
+            onnx_path = model.export(format="onnx")
             
-            
-            mlflow.pytorch.log_model(
-                pytorch_model=brain,
-                artifact_path="pcb-yolo-model"
-            )
+            print(f"Logging ONNX model to MLflow from {onnx_path}...")
+            # We log the raw ONNX file as an artifact. 
+            # Ultralytics natively loads .onnx files via YOLO('model.onnx')
+            mlflow.log_artifact(onnx_path, artifact_path="pcb-yolo-model")
 
         # Log all YOLO artifacts (Unspoiled)
         if yolo_run_dir.exists():

@@ -30,9 +30,8 @@ def main():
     # Download the artifact
     print("Downloading model weights from MLflow Artifact Store...")
     try:
-        # In train.py, we used mlflow.log_artifacts to upload the raw YOLO run directory.
-        # This means the native YOLO .pt file is located exactly at "weights/best.pt" in the artifact root!
-        model_path = client.download_artifacts(mv.run_id, "weights/best.pt")
+        # We now log the ONNX model under the pcb-yolo-model path
+        model_path = client.download_artifacts(mv.run_id, "pcb-yolo-model/best.onnx")
             
         print(f"Model downloaded successfully to {model_path}")
     except Exception as e:

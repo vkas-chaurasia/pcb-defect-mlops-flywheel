@@ -279,8 +279,8 @@ def start_polling_thread():
         while True:
             time.sleep(30)
             try:
-                # Check for the @champion model
-                weights = mlflow.artifacts.download_artifacts(artifact_uri="models:/pcb-defect-model@champion/weights/best.pt")
+                # Check for the @champion model (ONNX format)
+                weights = mlflow.artifacts.download_artifacts(artifact_uri="models:/pcb-defect-model@champion/pcb-yolo-model/best.onnx")
                 if weights != ModelManager._weights:
                     print(f"\n🔄 [HOT RELOAD] New @champion model detected in Registry!")
                     print(f"Old path: {ModelManager._weights}")
