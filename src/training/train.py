@@ -79,7 +79,7 @@ def prepare_yolo_data(processed_dir: Path, yolo_dir: Path, img_size: int):
             (lbl_out / f"{split}_{i:06d}.txt").write_text("\n".join(lines))
 
     print("YOLO dataset images and labels prepared.")
-    dataset_cfg = {"path": str(yolo_dir), "train": "images/train", "val": "images/val", "test": "images/test", "nc": len(CLASS_NAMES), "names": CLASS_NAMES}
+    dataset_cfg = {"path": "data/yolo", "train": "images/train", "val": "images/val", "test": "images/test", "nc": len(CLASS_NAMES), "names": CLASS_NAMES}
     with open(yaml_path, "w") as f:
         yaml.dump(dataset_cfg, f)
     return yaml_path
