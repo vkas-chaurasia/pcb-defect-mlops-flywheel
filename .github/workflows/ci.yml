@@ -77,7 +77,7 @@ jobs:
         MLFLOW_S3_ENDPOINT_URL: http://localhost:9000
         AWS_ACCESS_KEY_ID: rustfsadmin
         AWS_SECRET_ACCESS_KEY: rustfsadmin
-      run: dvc pull data/raw.dvc -f
+      run: dvc pull -f
 
     - name: Reproduce Pipeline
       env:

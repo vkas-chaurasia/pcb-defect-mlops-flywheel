@@ -247,3 +247,4 @@ last_run_path.txt
 # Prediction Logs (Ignore production predictions, track baseline reference)
 monitoring/prediction_log.csv
 
+/mlflow-official-history
