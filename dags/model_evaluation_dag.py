@@ -30,7 +30,7 @@ with DAG(
     'model_governance_eval',
     default_args=default_args,
     description='Evaluate Staging model and open Governance PR',
-    schedule_interval='@daily',
+    schedule_interval=None,
     start_date=datetime(2026, 1, 1),
     catchup=False,
     tags=['governance', 'mlops'],
