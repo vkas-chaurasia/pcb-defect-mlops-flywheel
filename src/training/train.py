@@ -217,6 +217,9 @@ def main():
         
         if best_pt.exists():
             print("Logging formal PyTorch model flavor...")
+            from ultralytics.utils.torch_utils import strip_optimizer
+            strip_optimizer(best_pt) # <--- Fixes MPS weights corruption on Linux CPU!
+            
             import torch
             ckpt = torch.load(best_pt, weights_only=False)
             brain = ckpt['model']

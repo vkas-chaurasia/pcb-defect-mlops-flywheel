@@ -1,4 +1,4 @@
 train:
   epochs: 10
-  img_size: 640
+  img_size: 224
   batch: 16
