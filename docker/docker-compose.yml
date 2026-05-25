@@ -71,6 +71,8 @@ services:
     ports:
       - "8085:8080"
     user: "501:0"
+    env_file:
+      - ../.env
     environment:
       - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
@@ -79,8 +81,6 @@ services:
       - _PIP_ADDITIONAL_REQUIREMENTS=pandas numpy requests label-studio-sdk python-dotenv dvc[s3] mlflow
       - _AIRFLOW_WWW_USER_USERNAME=admin
       - _AIRFLOW_WWW_USER_PASSWORD=admin
-      - GITHUB_TOKEN=${GITHUB_TOKEN}
-      - GITHUB_REPO=${GITHUB_REPO}
       - LABEL_STUDIO_URL=http://label-studio:8080
       - LABEL_STUDIO_API_KEY=4c5c6e9a5c5c42458204e855a68a0fcd4c5c6e9a
       - LABEL_STUDIO_PROJECT_ID=1

@@ -79,7 +79,7 @@ def prepare_yolo_data(processed_dir: Path, yolo_dir: Path, img_size: int):
             (lbl_out / f"{split}_{i:06d}.txt").write_text("\n".join(lines))
 
     print("YOLO dataset images and labels prepared.")
-    dataset_cfg = {"path": str(yolo_dir), "train": "images/train", "val": "images/val", "test": "images/test", "nc": len(CLASS_NAMES), "names": CLASS_NAMES}
+    dataset_cfg = {"path": "data/yolo", "train": "images/train", "val": "images/val", "test": "images/test", "nc": len(CLASS_NAMES), "names": CLASS_NAMES}
     with open(yaml_path, "w") as f:
         yaml.dump(dataset_cfg, f)
     return yaml_path
@@ -227,8 +227,9 @@ def main():
             onnx_path = model.export(format="onnx", device="cpu")
             
             print(f"Logging ONNX model to MLflow from {onnx_path}...")
-            # We log the raw ONNX file as an artifact. 
-            # Ultralytics natively loads .onnx files via YOLO('model.onnx')
+            # Log both best.pt and best.onnx under the same pcb-yolo-model/ path
+            # so evaluate_staging_model.py can download either format reliably.
+            mlflow.log_artifact(str(best_pt), artifact_path="pcb-yolo-model")
             mlflow.log_artifact(onnx_path, artifact_path="pcb-yolo-model")
 
         # Log all YOLO artifacts (Unspoiled)
