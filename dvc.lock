@@ -34,8 +34,8 @@ stages:
     outs:
     - path: data/yolo
       hash: md5
-      md5: 521ba508e5f83e10c291000c585deb1a.dir
-      size: 23648384
+      md5: e0db350899daf70d7b37cd36b59a8814.dir
+      size: 23708121
       nfiles: 2993
     - path: metrics.json
       hash: md5
