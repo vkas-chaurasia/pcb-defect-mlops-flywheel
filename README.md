@@ -176,14 +176,21 @@ Deploy the champion model to the FastAPI server for real-time inference. The ser
 uv run python -m src.serving.serve
 ```
 - **Data Drift Detection**: Data drift is calculated using Evidently AI.
-- **Airflow Automation**: The `data_sync_and_drift_check_dag` synchronizes annotations from Label Studio and analyzes live FastAPI prediction logs against the baseline using Evidently AI. If significant drift is detected, it flags the system for retraining.
+- **Airflow Automation**: The `data_sync_and_drift_check_dag` runs daily — it first syncs any completed annotations from Label Studio, then analyzes live FastAPI prediction logs against the baseline using Evidently AI. If significant drift is detected, Airflow automatically opens a retraining Pull Request via the GitHub API.
 
 ### Phase 4: Active Learning and Refinement
-To refine the model using active learning:
-1. Upload new "unseen" or drifted PCB images to Label Studio.
-2. Use the Active Learning Loop in the Streamlit UI to identify high-uncertainty cases.
-3. Sync refined labels back to the repo (`src/utils/sync_labels.py`).
-4. Return to Phase 1 (Open a Pull Request to incorporate new data).
+FastAPI automatically routes low-confidence detections to Label Studio for human review:
+1. **Automatic routing**: When FastAPI detects defects with low confidence, those images are queued in Label Studio for annotation.
+2. **Human annotation**: Open Label Studio and annotate the queued images with defect bounding boxes.
+3. **Automated sync**: The Airflow `data_sync_and_drift_check_dag` runs daily — it pulls completed annotations from Label Studio via the API, converts them to YOLO format, and writes them to `data/raw/active_learning/`.
+4. **Trigger retraining**: Airflow opens a retraining PR automatically when drift is detected. A developer can also open a PR manually after versioning new data:
+   ```bash
+   dvc add data/raw
+   dvc push
+   git add data/raw.dvc
+   git commit -m "data: add new annotated samples"
+   git push origin <branch>
+   ```
 
 ---
 
