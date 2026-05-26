@@ -2,29 +2,9 @@
   "metrics": [
     {
       "result": {
-        "dataset_drift": false
+        "dataset_drift": true
       }
     }
   ],
-  "psi_scores": {
-    "avg_confidence": 0.027,
-    "num_detections": 0.0215
-  },
-  "summary": {
-    "avg_confidence": {
-      "ref_mean": 0.10104488888888888,
-      "curr_mean": 0.11091,
-      "psi": 0.027000085262687518,
-      "status": "Stable",
-      "badge_class": "badge-stable"
-    },
-    "num_detections": {
-      "ref_mean": 0.8933333333333333,
-      "curr_mean": 1.03,
-      "psi": 0.021484047360827936,
-      "status": "Stable",
-      "badge_class": "badge-stable"
-    }
-  },
-  "checked_at": "2026-05-24T21:27:33.069792"
+  "checked_at": "2026-05-26T16:43:01.679379"
 }
