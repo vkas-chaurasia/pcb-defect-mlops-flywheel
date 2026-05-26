@@ -43,7 +43,7 @@ def convert_ls_to_yolo(ls_rect, img_width, img_height):
 
 def sync_labels():
     """Downloads annotations from Label Studio and saves them in YOLO format."""
-    print(f"📡 Connecting to Label Studio at {LS_URL}...")
+    print(f"Connecting to Label Studio at {LS_URL}...")
     
     try:
         ls = Client(url=LS_URL, api_key=LS_API_KEY)
@@ -54,6 +54,9 @@ def sync_labels():
         exported_count = 0
         
         for task in tasks:
+            if task.get('meta', {}).get('synced'):
+                continue
+
             if not task.get('annotations'):
                 continue
                 
@@ -96,14 +99,14 @@ def sync_labels():
                 if image_src.exists():
                     shutil.copy(image_src, OUTPUT_DIR / filename)
                 
-                print(f"✅ Synced: {filename} ({len(yolo_lines)} defects)")
+                ls.make_request("PATCH", f"/api/tasks/{task['id']}", json={"meta": {"synced": True}})
+                print(f"Synced: {filename} ({len(yolo_lines)} defects)")
                 exported_count += 1
         
-        print(f"\n✨ Exported {exported_count} labels to {OUTPUT_DIR}")
-        print("💡 These are now ready to be moved to your training folder!")
-        
+        print(f"Exported {exported_count} labels to {OUTPUT_DIR}")
+
     except Exception as e:
-        print(f"❌ Error during sync: {e}")
+        print(f"Error during sync: {e}")
 
 if __name__ == "__main__":
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)

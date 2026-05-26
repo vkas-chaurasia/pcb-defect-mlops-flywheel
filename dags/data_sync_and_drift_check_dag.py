@@ -25,7 +25,7 @@ with DAG(
 
     drift_monitor = BashOperator(
         task_id='drift_monitor',
-        bash_command='cd /opt/airflow/project && python src/monitoring/drift_monitor.py --auto-pr',
+        bash_command='cd /opt/airflow/project && python src/monitoring/drift_monitor.py',
         env={
             'GITHUB_TOKEN': os.getenv('GITHUB_TOKEN') or '{{ var.value.get("github_token", "") }}',
             'GITHUB_REPO': os.getenv('GITHUB_REPO') or '{{ var.value.get("github_repo", "") }}',

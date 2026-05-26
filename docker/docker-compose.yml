@@ -95,7 +95,7 @@ services:
       - ..:/opt/airflow/project
       - ../airflow-db:/opt/airflow/db
     working_dir: /opt/airflow/project
-    command: bash -c "pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu torch 'mlflow==2.22.1' 'ultralytics>=8.1.0' onnx onnxruntime onnxslim evidently && pip uninstall -y opencv-python opencv-python-headless && pip install --no-cache-dir opencv-python-headless && airflow db migrate && (airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true) && airflow standalone"
+    command: bash -c "pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu torch 'mlflow==2.22.1' 'ultralytics>=8.1.0' onnx onnxruntime onnxslim evidently label-studio-sdk python-dotenv && pip uninstall -y opencv-python opencv-python-headless && pip install --no-cache-dir opencv-python-headless && airflow db migrate && (airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true) && airflow standalone"
 
   # Dedicated Evidently AI Dashboard Service
   evidently-ui:
