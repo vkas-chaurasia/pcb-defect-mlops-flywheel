@@ -1,4 +1,5 @@
 import argparse
+import os
 import json
 import pandas as pd
 from datetime import datetime
@@ -98,8 +99,101 @@ def main():
         json.dump(results_json, f, indent=2)
 
     print(f"Saved drift results JSON to {reports_dir}")
-    if drift_detected:
-        print("Drift detected. Review the Evidently UI at http://localhost:8005 and open a retraining PR when ready.")
+
+    if not drift_detected:
+        return
+
+    token = os.getenv("GITHUB_TOKEN")
+    repo = os.getenv("GITHUB_REPO")
+    if not token or not repo:
+        print("Drift detected. Set GITHUB_TOKEN and GITHUB_REPO to enable automatic PR creation.")
+        return
+
+    import requests
+    headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
+    api_base = f"https://api.github.com/repos/{repo}"
+
+    # Skip if an open drift PR already exists
+    existing = requests.get(f"{api_base}/pulls", headers=headers, params={"state": "open", "base": "main"})
+    if existing.status_code == 200:
+        open_drift_prs = [pr for pr in existing.json() if pr["head"]["ref"].startswith("retrain/drift-")]
+        if open_drift_prs:
+            print(f"Open drift PR already exists ({open_drift_prs[0]['html_url']}). Skipping PR creation.")
+            return
+    else:
+        print(f"Warning: could not check existing PRs ({existing.status_code}). Proceeding with PR creation.")
+
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    branch_name = f"retrain/drift-{timestamp}"
+
+    # Get main branch SHA
+    res = requests.get(f"{api_base}/git/ref/heads/main", headers=headers)
+    if res.status_code != 200:
+        print(f"Failed to get main SHA: {res.status_code} - {res.text}")
+        return
+    main_sha = res.json()["object"]["sha"]
+
+    # Create new branch via API (no git needed in container)
+    res = requests.post(f"{api_base}/git/refs", headers=headers, json={
+        "ref": f"refs/heads/{branch_name}", "sha": main_sha
+    })
+    if res.status_code not in (201, 422):
+        print(f"Failed to create branch: {res.status_code} - {res.text}")
+        return
+    print(f"Branch created: {branch_name}")
+
+    # Commit drift report files via API
+    import base64
+    for file_path, local_path in {
+        "reports/evidently_drift_report.html": reports_dir / "evidently_drift_report.html",
+        "reports/drift_results.json": reports_dir / "drift_results.json",
+    }.items():
+        if not local_path.exists():
+            continue
+        content_b64 = base64.b64encode(local_path.read_bytes()).decode()
+        existing_file = requests.get(f"{api_base}/contents/{file_path}?ref={branch_name}", headers=headers)
+        payload = {
+            "message": f"chore: drift detected, adding report ({timestamp})",
+            "content": content_b64,
+            "branch": branch_name,
+        }
+        if existing_file.status_code == 200:
+            payload["sha"] = existing_file.json()["sha"]
+        requests.put(f"{api_base}/contents/{file_path}", headers=headers, json=payload)
+    print("Drift report files committed to branch.")
+
+    pr_body = (
+        "## Drift Detected - Retraining Required\n\n"
+        "Data drift has been detected in production predictions using Evidently AI.\n\n"
+        "### Drift Summary\n"
+        f"- **Evidently AI Dataset Drift:** {drift_detected}\n"
+        f"- **Evidently Dashboard:** [View Live Report](http://localhost:8005)\n\n"
+        "### Next Steps\n"
+        "1. Review the drift report in the Evidently UI or check `reports/evidently_drift_report.html` in this PR.\n"
+        "2. Pull this branch and add new labelled images to `data/raw/`.\n"
+        "3. Version the updated data and push to remote storage:\n"
+        "   ```bash\n"
+        f"   git checkout {branch_name}\n"
+        "   dvc add data/raw\n"
+        "   dvc push\n"
+        "   git add data/raw.dvc\n"
+        "   git commit -m 'data: add new samples for retraining'\n"
+        f"   git push origin {branch_name}\n"
+        "   ```\n"
+        "4. Pushing the DVC update above will automatically trigger CI/CD training — review the CML report posted in this PR.\n"
+        "5. Merge to export the model to ONNX and register it as `@staging` in the MLflow Model Registry.\n"
+    )
+
+    res = requests.post(f"{api_base}/pulls", headers=headers, json={
+        "title": f"drift: retraining required - data drift detected ({timestamp})",
+        "head": branch_name,
+        "base": "main",
+        "body": pr_body,
+    })
+    if res.status_code == 201:
+        print(f"PR created successfully: {res.json()['html_url']}")
+    else:
+        print(f"Failed to create PR: {res.status_code} - {res.text}")
 
 if __name__ == "__main__":
     main()
