@@ -78,7 +78,7 @@ services:
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/project/dags
       - AIRFLOW__API__AUTH_BACKENDS=airflow.api.auth.backend.basic_auth
-      - _PIP_ADDITIONAL_REQUIREMENTS=pandas numpy requests label-studio-sdk python-dotenv dvc[s3] mlflow
+
       - _AIRFLOW_WWW_USER_USERNAME=admin
       - _AIRFLOW_WWW_USER_PASSWORD=admin
       - LABEL_STUDIO_URL=http://label-studio:8080
