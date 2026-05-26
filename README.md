@@ -209,6 +209,25 @@ FastAPI automatically routes low-confidence detections to Label Studio for human
 
 ---
 
+## Docs
+
+| File | Description |
+| :--- | :--- |
+| [`docs/presentation.md`](docs/presentation.md) | Marp slide deck — 11 slides covering all 4 phases, architecture, CI/CD, and human gates. |
+| [`docs/diagrams.md`](docs/diagrams.md) | Standalone copy of the system architecture diagram. |
+
+**To export the presentation to PDF:**
+```bash
+# Option 1 — CLI
+npx @marp-team/marp-cli docs/presentation.md --pdf
+
+# Option 2 — VS Code
+# Install the "Marp for VS Code" extension, open docs/presentation.md,
+# click the Marp icon in the top-right, then "Export slide deck"
+```
+
+---
+
 ## Best Practices
 - **Never Commit data/raw**: Always use `dvc push` to store large images in RustFS.
 - **Official Runs**: Only the CI/CD pipeline should log to Port 5556 to keep the "Official Showroom" clean.
