@@ -1,0 +1,18 @@
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '14px', 'fontFamily': 'Inter'}}}%%
+flowchart LR
+
+classDef infra fill:#1C2B3A,stroke:#0d1821,color:#fff,font-weight:bold
+classDef ml fill:#1A4731,stroke:#0d2419,color:#fff,font-weight:bold
+classDef registry fill:#1E6B3C,stroke:#0f3a21,color:#fff,font-weight:bold
+classDef human fill:#FFD700,stroke:#8B6914,color:#1a1a1a,font-weight:bold
+classDef step fill:#F2F2F0,stroke:#3A7D28,color:#1a1a1a
+
+P1["Pull Request\nopened"]:::step
+P2["GitHub Actions\nself-hosted runner\ndvc pull · dvc repro\nYOLOv8 train + eval"]:::infra
+P3["MLflow Official\nlog metrics\nconfusion matrix · F1"]:::registry
+P4["CML posts\nvisual report\nto PR"]:::ml
+H_PR["HUMAN APPROVAL\nReview report\n& merge PR"]:::human
+P5["Merge to main\nbest.pt → best.onnx\nregister @staging"]:::infra
+
+P1 --> P2 --> P3 --> P4 --> H_PR -->|"approve & merge"| P5
+H_PR -->|"request changes"| P1

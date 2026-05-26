@@ -1,0 +1,21 @@
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '14px', 'fontFamily': 'Inter'}}}%%
+flowchart LR
+
+classDef infra fill:#1C2B3A,stroke:#0d1821,color:#fff,font-weight:bold
+classDef registry fill:#1E6B3C,stroke:#0f3a21,color:#fff,font-weight:bold
+classDef human fill:#FFD700,stroke:#8B6914,color:#1a1a1a,font-weight:bold
+classDef decision fill:#C47A1E,stroke:#8B5615,color:#fff,font-weight:bold
+classDef step fill:#F2F2F0,stroke:#3A7D28,color:#1a1a1a
+
+P1["@staging\nregistered\nin MLflow"]:::registry
+P2["Airflow DAG\nmodel_governance_eval\nvs golden val set"]:::infra
+D1{"Passes\neval?"}:::decision
+P3["tag: failed\nno PR"]:::step
+P4["tag: passed\ncreate governance PR"]:::infra
+H_GOV["HUMAN APPROVAL\nReview Governance PR\nverify safety & accuracy"]:::human
+P5["deploy.yml\nset @champion\nin MLflow"]:::registry
+P6["FastAPI\nhot-reloads\nwithin 30 s"]:::infra
+
+P1 --> P2 --> D1
+D1 -->|"Fail"| P3
+D1 -->|"Pass"| P4 --> H_GOV -->|"approve & merge"| P5 --> P6

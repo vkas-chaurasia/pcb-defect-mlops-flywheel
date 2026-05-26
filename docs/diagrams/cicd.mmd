@@ -1,0 +1,16 @@
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '14px', 'fontFamily': 'Inter'}}}%%
+flowchart LR
+
+classDef infra fill:#1C2B3A,stroke:#0d1821,color:#fff,font-weight:bold
+classDef registry fill:#1E6B3C,stroke:#0f3a21,color:#fff,font-weight:bold
+classDef human fill:#FFD700,stroke:#8B6914,color:#1a1a1a,font-weight:bold
+classDef step fill:#F2F2F0,stroke:#3A7D28,color:#1a1a1a
+
+T1["Pull Request\nopened / updated"]:::step
+T2["ci.yml\nself-hosted runner\ndvc pull · dvc repro\nlog MLflow · CML report"]:::infra
+H_PR["HUMAN APPROVAL\nReview & merge PR"]:::human
+T3["ci.yml on push to main\nbest.pt → best.onnx\nregister @staging\ntrigger governance DAG"]:::infra
+T4["Governance PR\nmerged"]:::step
+T5["deploy.yml\nset @champion\nin MLflow Registry"]:::registry
+
+T1 --> T2 --> H_PR -->|"merge"| T3 --> T4 --> T5

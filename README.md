@@ -209,6 +209,29 @@ FastAPI automatically routes low-confidence detections to Label Studio for human
 
 ---
 
+## Docs
+
+| File | Description |
+| :--- | :--- |
+| [`docs/presentation.md`](docs/presentation.md) | Marp source slide deck (edit this to update slides) |
+| [`docs/presentation.pdf`](docs/presentation.pdf) | Exported PDF |
+| [`docs/presentation.pptx`](docs/presentation.pptx) | Exported PowerPoint |
+| [`docs/diagrams/`](docs/diagrams/) | Pre-rendered SVG diagrams used in slides |
+| [`docs/diagrams.md`](docs/diagrams.md) | Standalone system architecture diagram |
+
+See **[docs/README.md](docs/README.md)** for full export instructions (PDF, PPTX, and diagram regeneration).
+
+**Quick export:**
+```bash
+# PDF
+npx @marp-team/marp-cli docs/presentation.md --pdf --allow-local-files --output docs/presentation.pdf
+
+# PowerPoint
+npx @marp-team/marp-cli docs/presentation.md --pptx --allow-local-files --output docs/presentation.pptx
+```
+
+---
+
 ## Best Practices
 - **Never Commit data/raw**: Always use `dvc push` to store large images in RustFS.
 - **Official Runs**: Only the CI/CD pipeline should log to Port 5556 to keep the "Official Showroom" clean.

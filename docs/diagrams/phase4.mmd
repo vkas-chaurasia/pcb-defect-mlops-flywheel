@@ -1,0 +1,16 @@
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '14px', 'fontFamily': 'Inter'}}}%%
+flowchart LR
+
+classDef infra fill:#1C2B3A,stroke:#0d1821,color:#fff,font-weight:bold
+classDef ml fill:#1A4731,stroke:#0d2419,color:#fff,font-weight:bold
+classDef human fill:#FFD700,stroke:#8B6914,color:#1a1a1a,font-weight:bold
+classDef step fill:#F2F2F0,stroke:#3A7D28,color:#1a1a1a
+
+P1["FastAPI\ndefect detected\nlow confidence"]:::infra
+P2["Label Studio\nimage queued\nfor annotation"]:::ml
+H_ANNOT["HUMAN\nAnnotate bounding boxes\n6 defect classes"]:::human
+P3["Airflow sync_labels DAG\nDownload from Label Studio API\nConvert to YOLO format\nWrite to data/raw/active_learning/"]:::infra
+P4["dvc add · dvc push\ngit commit dvc.lock\nOpen Pull Request"]:::step
+P5["Phase 1\nCI/CD Training\nFlywheel closes"]:::ml
+
+P1 --> P2 --> H_ANNOT --> P3 --> P4 --> P5
