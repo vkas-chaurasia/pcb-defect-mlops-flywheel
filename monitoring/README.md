@@ -41,3 +41,16 @@ This is the mathematical average of all confidence scores on a single PCB image.
 This is the confidence score of the single most certain defect detected on the PCB.
 * **Example**: In the example above with scores of `0.45`, `0.70`, and `0.92`, the `max_confidence` is **`0.92` (92%)**.
 * **MLOps Value**: Tracking the max confidence tells us whether the model is still capable of making highly certain predictions. If both the `avg_confidence` and `max_confidence` drop together, it indicates a severe performance decay. If `max_confidence` remains high but `avg_confidence` drops, it means the model is making many weak, low-certainty detections.
+
+---
+
+## Drift Detection Features
+
+The Evidently AI drift monitor uses only the following two features from `prediction_log.csv`:
+
+| Feature | Why it is used |
+| :--- | :--- |
+| `avg_confidence` | Reflects how familiar the model finds the incoming images. A drop signals the model is seeing patterns outside its training distribution. |
+| `avg_bbox_area` | Reflects the physical scale of defects. A shift indicates changes in camera setup, PCB layout, or defect type — all signs of input distribution change. |
+
+`num_detections` is intentionally excluded. It measures the actual defect rate of the PCBs being inspected, which varies with production quality and is not an indicator of input distribution shift. Including it would cause false drift alarms on clean or heavily defective batches.

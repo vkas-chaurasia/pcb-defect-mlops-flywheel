@@ -73,7 +73,7 @@ def main():
             project.save()
 
         # Run the Data Drift Report
-        features = ["avg_confidence", "num_detections", "avg_bbox_area"]
+        features = ["avg_confidence", "avg_bbox_area"]
         ref_data = ref_df[features].dropna()
         curr_data = curr_window_df[features].dropna()
         
