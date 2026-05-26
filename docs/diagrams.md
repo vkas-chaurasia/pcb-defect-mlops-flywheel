@@ -16,7 +16,6 @@ graph TB
     classDef human    fill:#FFD700,stroke:#8B6914,color:#1a1a1a,font-weight:bold
 
     subgraph TRAIN["  Training & CI/CD  "]
-        direction LR
         n1["1. ML Repository\nGit · DVC · RustFS"]:::mltools
         n2["2. GitHub Actions\ndvc repro · YOLOv8 · CML"]:::infra
         n3["3. MLflow\nTracking · Registry"]:::registry
@@ -25,14 +24,12 @@ graph TB
     end
 
     subgraph GOV["  Model Governance  "]
-        direction LR
         n4["4. Airflow\nmodel_governance_eval"]:::infra
         H_GOV["HUMAN APPROVAL\nReview Governance PR\n& promote @champion"]:::human
         n4 -->|"eval passed · open PR"| H_GOV
     end
 
     subgraph SERVE["  Serving · Monitoring · Active Learning  "]
-        direction LR
         n5["5. FastAPI\nONNX Inference"]:::infra
         n6["6. Streamlit\nFrontend"]:::mltools
         n7["7. Airflow\nDrift Monitor"]:::infra
