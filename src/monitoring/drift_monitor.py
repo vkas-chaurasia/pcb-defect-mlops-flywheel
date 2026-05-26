@@ -21,8 +21,8 @@ def main():
     ref_df = pd.read_csv(args.ref)
     curr_df = pd.read_csv(args.curr)
 
-    if len(curr_df) < 50:
-        print(f"Not enough data to check drift ({len(curr_df)} < 50).")
+    if len(curr_df) < 5:
+        print(f"Not enough data to check drift ({len(curr_df)} < 5).")
         return
 
     # Take the last 100 rows for current window
