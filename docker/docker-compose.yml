@@ -31,7 +31,7 @@ services:
       - MLFLOW_S3_IGNORE_TLS=true
     volumes:
       - ../mlflow-official-history:/mlflow/data
-    command: bash -c "touch /mlflow/data/mlflow.db && chmod 666 /mlflow/data/mlflow.db && mlflow server --host 0.0.0.0 --backend-store-uri sqlite:////mlflow/data/mlflow.db --default-artifact-root mlflow-artifacts:/ --serve-artifacts"
+    command: bash -c "chmod 666 /mlflow/data/mlflow.db || true && mlflow server --host 0.0.0.0 --backend-store-uri sqlite:////mlflow/data/mlflow.db --default-artifact-root mlflow-artifacts:/ --serve-artifacts"
 
   # Human-in-the-Loop Labeling
   label-studio:
@@ -93,9 +93,17 @@ services:
       - MLFLOW_TRACKING_URI=http://mlflow-official:5000
     volumes:
       - ..:/opt/airflow/project
-      - airflow-db:/opt/airflow/db
+      - ../airflow-db:/opt/airflow/db
     working_dir: /opt/airflow/project
-    command: bash -c "pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu torch 'mlflow==2.22.1' 'ultralytics>=8.1.0' onnx onnxruntime onnxslim && pip uninstall -y opencv-python opencv-python-headless && pip install --no-cache-dir opencv-python-headless && airflow db migrate && (airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true) && airflow standalone"
+    command: bash -c "pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu torch 'mlflow==2.22.1' 'ultralytics>=8.1.0' onnx onnxruntime onnxslim evidently && pip uninstall -y opencv-python opencv-python-headless && pip install --no-cache-dir opencv-python-headless && airflow db migrate && (airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true) && airflow standalone"
 
-volumes:
-  airflow-db:
+  # Dedicated Evidently AI Dashboard Service
+  evidently-ui:
+    image: evidently/evidently-service:latest
+    container_name: evidently-ui
+    ports:
+      - "8005:8000"
+    volumes:
+      - ../monitoring/evidently_workspace:/workspace
+    working_dir: /workspace
+    command: ["--workspace", "/workspace"]

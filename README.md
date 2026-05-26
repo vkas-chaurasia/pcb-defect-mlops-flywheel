@@ -14,6 +14,7 @@ This repository implements a production-grade MLOps ecosystem for automated PCB 
 | **Frontend** | [Streamlit](https://streamlit.io/) | Interactive sandbox for real-time defect analysis (Port 8501). |
 | **Orchestration** | [Docker Compose](https://www.docker.com/) | Unified management of all infrastructure services. |
 | **Workflow / Monitoring**| [Airflow](https://airflow.apache.org/) | Workflow orchestration (Port 8085), automating label synchronization and scheduled data drift monitoring. |
+| **Drift Monitoring** | [Evidently AI](https://www.evidentlyai.com/) | Live data drift evaluation & dashboard service (Port 8005). |
 | **Tracking** | [MLflow](https://mlflow.org/) | Dual-instance tracking for Sandbox (5555) and Official (5556) runs. |
 | **Annotation** | [Label Studio](https://labelstud.io/) | Active learning and dataset refinement (Port 8080). |
 | **Versioning** | [DVC](https://dvc.org/) | Large data and model versioning with S3-compatible backends. |
@@ -46,6 +47,7 @@ The following core services are now running via Docker:
 - **MLflow (Sandbox)**: http://localhost:5555
 - **MLflow (Official)**: http://localhost:5556
 - **Label Studio**: http://localhost:8080 (Admin: admin@example.com / mlops123)
+- **Evidently UI**: http://localhost:8005
 - **RustFS S3 Console**: http://localhost:9001 (rustfsadmin / rustfsadmin)
 
 *(Note: The FastAPI Server and Streamlit UI are run locally via Python scripts later in the workflow, not via Docker).*
@@ -125,8 +127,8 @@ Deploy the champion model to the FastAPI server for real-time inference. The ser
 # Serves the champion model from the MLflow registry
 uv run python -m src.serving.serve
 ```
-- **Data Drift Detection**: Data drift is calculated using Population Stability Index (PSI). 
-- **Airflow Automation**: The `drift_monitoring_dag` analyzes live FastAPI prediction logs against the baseline. If significant drift is detected, it flags the system for retraining.
+- **Data Drift Detection**: Data drift is calculated using Evidently AI.
+- **Airflow Automation**: The `data_sync_and_drift_check_dag` synchronizes annotations from Label Studio and analyzes live FastAPI prediction logs against the baseline using Evidently AI. If significant drift is detected, it flags the system for retraining.
 
 ### Phase 4: Active Learning and Refinement
 To refine the model using active learning:
@@ -141,7 +143,7 @@ To refine the model using active learning:
 - `src/app/`: Streamlit dashboard for real-time detection.
 - `src/serving/`: FastAPI inference service logic and prediction logger.
 - `src/training/`: YOLOv8 training and evaluation scripts.
-- `src/monitoring/`: Data drift detection, baseline generation, and pure-Python PSI implementation.
+- `src/monitoring/`: Data drift detection, monitoring scripts, and baseline generation using Evidently AI.
 - `src/utils/`: Label Studio sync and batch inference helpers.
 - `dags/`: Airflow DAGs for drift monitoring and synchronization tasks.
 - `docker/`: Unified Docker Compose configuration (FastAPI, MLflow, Label Studio, RustFS, Airflow).
