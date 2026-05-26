@@ -37,6 +37,11 @@ Usage
 """
 
 import argparse
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 import io
 import time
 import os
