@@ -3,289 +3,327 @@ marp: true
 theme: default
 paginate: true
 style: |
-  :root {
-    --color-navy:  #1C2B3A;
-    --color-green: #1A4731;
-    --color-reg:   #1E6B3C;
-    --color-gold:  #FFD700;
-    --color-orange:#C47A1E;
-  }
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;600&family=Inter:wght@400;500;600&display=swap');
+
   section {
     font-family: 'Inter', 'Segoe UI', sans-serif;
-    background: #ffffff;
+    background: #F2F2F0;
     color: #1a1a1a;
+    padding: 48px 60px;
   }
+
+  /* ── Title slide ── */
   section.title {
-    background: #1C2B3A;
+    background: #5B9A3E;
     color: #ffffff;
-    text-align: center;
-    justify-content: center;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 55% 45%;
   }
-  section.title h1 { font-size: 2.4rem; color: #ffffff; margin-bottom: 0.3em; }
-  section.title p  { color: #a0b4c8; font-size: 1rem; }
-  section.dark {
-    background: #1C2B3A;
+  section.title .left {
+    padding: 60px 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  section.title h1 {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 2.6rem;
     color: #ffffff;
+    border: none;
+    line-height: 1.25;
+    margin: 0 0 0.4em 0;
   }
-  section.dark h2 { color: #FFD700; }
-  h1 { color: #1C2B3A; font-size: 1.9rem; border-bottom: 3px solid #1E6B3C; padding-bottom: 0.2em; }
-  h2 { color: #1C2B3A; font-size: 1.5rem; }
-  table { width: 100%; font-size: 0.78rem; }
-  th { background: #1C2B3A; color: #fff; }
-  tr:nth-child(even) { background: #f4f7f4; }
-  code { background: #f0f4f0; border-radius: 4px; padding: 0.1em 0.4em; font-size: 0.85em; }
-  pre  { background: #1C2B3A; color: #a8d8a8; border-radius: 8px; padding: 1em; font-size: 0.78rem; }
-  .badge { display:inline-block; background:#1E6B3C; color:#fff; border-radius:4px; padding:2px 8px; font-size:0.75rem; margin-right:4px; }
-  .human { display:inline-block; background:#FFD700; color:#1a1a1a; border-radius:4px; padding:2px 8px; font-size:0.75rem; font-weight:bold; }
+  section.title h2 {
+    font-size: 1rem;
+    font-weight: 400;
+    color: #d4ecc8;
+    border: none;
+    margin: 0 0 0.3em 0;
+  }
+  section.title .names {
+    font-size: 0.9rem;
+    color: #d4ecc8;
+    margin-top: auto;
+  }
+
+  /* ── Content slides ── */
+  h1 {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #3A7D28;
+    border: none;
+    border-bottom: 3px solid #3A7D28;
+    padding-bottom: 0.25em;
+    margin-bottom: 0.6em;
+  }
+  h2 { font-size: 1.1rem; color: #2C5F1E; margin-bottom: 0.3em; }
+  h3 { font-size: 0.95rem; color: #3A7D28; margin-bottom: 0.2em; }
+
+  /* ── Tables ── */
+  table { width: 100%; font-size: 0.74rem; border-collapse: collapse; }
+  th { background: #3A7D28; color: #fff; padding: 6px 10px; text-align: left; }
+  td { padding: 5px 10px; border-bottom: 1px solid #dde8d8; }
+  tr:nth-child(even) td { background: #eef5ea; }
+
+  /* ── Code ── */
+  code { background: #e8f2e4; color: #2C5F1E; border-radius: 3px; padding: 0.05em 0.35em; font-size: 0.82em; }
+  pre  { background: #263326; color: #b8d8b0; border-radius: 6px; padding: 0.9em 1.1em; font-size: 0.7rem; line-height: 1.5; }
+
+  /* ── Problem / Solution boxes ── */
+  .box { border: 1.5px solid #3A7D28; border-radius: 6px; padding: 16px 20px; margin: 0; }
+  .box-problem { border-color: #D96B2A; }
+  .box-label { font-weight: 700; font-size: 0.8rem; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .box-label.problem { color: #D96B2A; }
+  .box-label.solution { color: #3A7D28; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+  /* ── Callout / quote ── */
+  blockquote { background: #eef5ea; border-left: 4px solid #3A7D28; padding: 10px 16px; margin: 12px 0 0; font-size: 0.82rem; color: #2C5F1E; border-radius: 0 4px 4px 0; }
+  blockquote p { margin: 0; }
+
+  /* ── Human gate badge ── */
+  .human { display:inline-block; background:#E8A030; color:#fff; border-radius:3px; padding:1px 7px; font-size:0.72rem; font-weight:600; }
+
+  /* ── Final dark slide ── */
+  section.dark { background: #263326; color: #ffffff; }
+  section.dark h1 { color: #7DC85A; border-bottom-color: #7DC85A; }
+  section.dark li { color: #d4ecc8; }
+  section.dark strong { color: #ffffff; }
+
+  /* ── Pagination ── */
+  section::after { color: #888; font-size: 0.7rem; }
 ---
 
 <!-- _class: title -->
 
-# PCB Defect Detection
-## The MLOps Flywheel
+<div class="left">
 
-Project in Machine Learning Operations
-ZHAW · Spring 2026
+# PCB Defect Detection System
 
----
+## Machine Learning and Data in Operations
+## Spring, 2026
 
-# Project Goal
+<div class="names">Bhatia Isha · Chaurasia Vikas · Duss Karin · Müller Jonathan</div>
 
-**Automate PCB quality control** using a self-reinforcing MLOps pipeline.
-
-- Detect **6 defect types** on printed circuit boards:
-  `open` · `short` · `mousebite` · `spur` · `spurious_copper` · `pin_hole`
-- Build a **flywheel** — every production run generates data that improves the next model
-- Full **human-in-the-loop** governance: no model reaches production without human approval
-
-### Why this matters
-> Manual PCB inspection is slow, expensive, and error-prone.
-> An automated, self-improving system reduces defect escape rates over time.
+</div>
 
 ---
 
-# System Architecture
+# Why Automate PCB Inspection?
 
-```
-Training Pipeline ──► MLflow Registry ──► Governance Eval ──► Human Approval
-      ▲                      │                                       │
-      │                      └──────────► FastAPI (ONNX) ◄──────────┘
-      │                                       │
-      │                              prediction_log.csv
-      │                                       │
-      │                            Airflow + Evidently AI
-      │                           /                      \
-      │                    No drift                  Drift detected
-      │                  keep serving            open retraining PR ──► Human
-      │
-      └──── Airflow sync_labels ◄── Human annotates ◄── Label Studio
-                                     (low-confidence detections)
-```
+<div class="two-col">
 
-> Gold gates = human decisions · Dashed = automated flywheel loops
+<div class="box box-problem">
+<div class="box-label problem">THE PROBLEM</div>
+
+- Manual inspection is slow and labor-intensive
+- Human error rates reach **20–30%** in high-volume production
+- Defects cause costly product recalls and field failures
+- No scalable real-time feedback loop for quality control
+
+</div>
+
+<div class="box">
+<div class="box-label solution">OUR SOLUTION</div>
+
+- Automated, sub-second visual defect detection
+- YOLOv8 replacing human variance
+- End-to-end MLOps pipeline for versioning and reproducibility
+- Active Learning data flywheel
+
+</div>
+
+</div>
 
 ---
 
-# Tech Stack
+# Concept
 
-| Component | Technology | Role |
+| | |
+|:---|:---|
+| **Input** | High-resolution PCB images — from production-line cameras or manual uploads |
+| **Core Task** | Detect and classify 6 defect types: `open` · `short` · `mousebite` · `spur` · `spurious_copper` · `pin_hole` |
+| **Output** | Defect class, bounding box location, confidence score, and PASS / FAIL decision |
+
+<br>
+
+> **Business value** — Faster inspection, fewer escaped defects, reduced labor cost, and more consistent quality than manual inspection
+
+---
+
+# Tools & Tech Stack
+
+| Stage | Tools | Purpose |
 | :--- | :--- | :--- |
-| **Code & CI/CD** | Git · GitHub · GitHub Actions + Self-hosted Runner | Version control, automated training on PRs |
-| **Detection** | YOLOv8 (ONNX export) | Object detection — 6 defect classes |
-| **Data Versioning** | DVC + RustFS (S3) | Reproducible datasets, local S3-compatible storage |
-| **Experiment Tracking** | MLflow (dual instance) | Sandbox :5555 for dev · Official :5556 for CI/CD |
-| **Workflow Orchestration** | Airflow | Governance eval · label sync · drift monitoring |
-| **Drift Detection** | Evidently AI | Statistical drift on confidence, bbox area, pass/fail |
-| **Annotation** | Label Studio | Human labelling of low-confidence images |
-| **Inference API** | FastAPI | ONNX serving · prediction logging · hot reload |
+| **Data** | DVC · RustFS (S3) | Version datasets, reproducible pulls |
+| **Model Development** | YOLOv8 · ONNX · Python | Train & export hardware-agnostic detection model |
+| **Experiment Tracking** | MLflow (dual instance) | Sandbox dev runs vs official CI/CD runs |
+| **CI / CD** | GitHub Actions · Self-hosted Runner · CML | Automated training on PRs, visual reports |
+| **Deployment** | FastAPI · Docker Compose | ONNX inference API with prediction logging |
 | **Frontend** | Streamlit | Interactive defect sandbox |
-| **Infrastructure** | Docker Compose | Unified local infrastructure management |
-| **PR Reporting** | CML | Confusion matrix + F1 curves posted on every PR |
+| **Labeling** | Label Studio | Human-in-the-loop annotation |
+| **Orchestration** | Airflow | Governance eval · label sync · drift monitoring |
+| **Drift Detection** | Evidently AI | Statistical monitoring of production predictions |
 
 ---
 
-# Phase 1 — Training Pipeline
-
-**Triggered by:** opening or updating a Pull Request
+# End-to-End MLOps Architecture
 
 ```
-Developer opens PR
-       │
-       ▼
-GitHub Actions (self-hosted runner)
-   dvc pull  ──► data/raw from RustFS S3
-   dvc repro ──► preprocess ──► YOLOv8 train ──► evaluate
-       │
-       ▼
-MLflow Official (:5556) — log metrics, confusion matrix, F1
-       │
-       ▼
-CML posts visual report as PR comment
-       │
-       ▼
- 👤 HUMAN reviews CML report ──► merge to main ──► register @staging in MLflow
+1. Training Pipeline ──train──► 2. MLflow Registry ──trigger──► 3. Governance Eval
+   Git · DVC · YOLOv8                @staging                      Airflow DAG
+   GitHub Actions · CML                  │                              │
+         ▲                               │ hot reload              eval passed
+         │                               ▼                              │
+         │                    4. Production Serving         👤 HUMAN Governance PR
+         │                       FastAPI · ONNX                         │
+         │                       Streamlit :8501               set @champion alias
+         │                               │
+         │                    prediction_log.csv
+         │                               │
+         │                  5. Airflow daily DAG
+         │             ① sync_labels  ② drift_monitor
+         │                               │
+         │                    Evidently AI drift check
+         │                      /                \
+         │               No drift            Drift detected
+         │            keep serving        👤 HUMAN retraining PR
+         │
+         └── Airflow sync_labels ◄── 👤 HUMAN annotates ◄── Label Studio
+                                        (low-confidence detections)
 ```
 
-- **Fast iteration**: `uv run python src/training/train.py` → logs to Sandbox MLflow (:5555)
-- **CI/CD runs strictly from `params.yaml`** — command-line flags are ignored by the pipeline
-- ONNX export happens automatically on merge to `main`
+---
+
+# Phase 1 — Training & CI/CD
+
+**Triggered by:** Pull Request opened or updated
+
+- GitHub Actions (self-hosted runner) runs the full pipeline:
+  `dvc pull` → `dvc repro` → preprocess → YOLOv8 train → evaluate
+- Metrics logged to **MLflow Official** (:5556)
+- **CML** posts confusion matrix + F1 curves as a PR comment
+
+<span class="human">👤 HUMAN GATE</span> &nbsp;Review CML report → merge to main → `@staging` registered in MLflow
+
+| Mode | Where it logs | When to use |
+|:---|:---|:---|
+| `uv run python src/training/train.py` | Sandbox MLflow :5555 | Fast local iteration |
+| `dvc repro` + open PR | Official MLflow :5556 | Before any merge |
+
+> CI/CD runs **strictly from `params.yaml`** — command-line flags used locally are ignored by the pipeline
 
 ---
 
 # Phase 2 — Model Governance
 
-**Triggered by:** CI/CD push to `main` (after merge)
+**Triggered by:** push to `main` after PR merge
 
 ```
-@staging registered in MLflow
-         │
-         ▼
-  Airflow DAG: model_governance_eval
-         │
-    evaluate_staging_model()
-    runs src/utils/evaluate_staging_model.py
-    against golden validation set
-         │
-    ┌────┴────┐
-  FAIL       PASS
-    │           │
-  tag:failed  tag:passed
-  skip        create_governance_pr()
-                │
-                ▼
-       GitHub PR: update deployment-repo/production_version.json
-                │
-                ▼
-       👤 HUMAN approves and merges Governance PR
-                │
-                ▼
-       deploy.yml ──► set @champion alias in MLflow
-                │
-                ▼
-       FastAPI hot-reloads @champion within 30 s
+@staging in MLflow
+       │
+       ▼
+Airflow: model_governance_eval DAG
+  evaluate_staging_model.py  ──► golden validation set
+       │
+  ┌────┴────┐
+ FAIL      PASS
+  │          │
+tag:failed  tag:passed → create_governance_pr()
+skip                         │
+                    GitHub PR: update production_version.json
+                             │
 ```
+
+<span class="human">👤 HUMAN GATE</span> &nbsp;Review Governance PR → merge → `deploy.yml` sets `@champion` alias
+
+> FastAPI polls MLflow every 30 s and hot-reloads when a new `@champion` is detected
 
 ---
 
-# Phase 3 — Production Serving & Drift Monitoring
+# Phase 3 — Serving & Drift Monitoring
 
-**FastAPI** loads `@champion` from MLflow · polls every 30 s for new version
-
-```
-POST /predict  ──►  YOLOv8 ONNX inference
-                         │
-                    prediction_logger.log()
-                         │
-                   monitoring/prediction_log.csv
-```
+**FastAPI** serves `@champion` via ONNX · logs every prediction to `monitoring/prediction_log.csv`
 
 **Airflow `data_sync_and_drift_check` DAG** — runs daily:
 
 | Step | What it does |
 | :--- | :--- |
 | ① `sync_labels` | Pull completed annotations from Label Studio → `data/raw/active_learning/` |
-| ② `drift_monitor` | Read last 100 rows of `prediction_log.csv` · run Evidently AI |
+| ② `drift_monitor` | Read last 100 rows of prediction log · run Evidently AI report |
 
-**Drift features monitored:**
-- `avg_confidence` — model certainty dropping signals out-of-distribution input
-- `avg_bbox_area` — shift in defect scale (camera/PCB layout change)
-- `pass_fail` — population-level failure rate shift
+**Features monitored by Evidently AI:**
 
-**If ≥ 50% features drifted:** Airflow opens a retraining PR via GitHub API
+| Feature | What a shift means |
+|:---|:---|
+| `avg_confidence` | Model seeing unfamiliar patterns |
+| `avg_bbox_area` | Camera setup or PCB layout changed |
+| `pass_fail` | Population-level failure rate shifted |
+
+<span class="human">👤 HUMAN GATE</span> &nbsp;If ≥ 50% features drifted → Airflow opens retraining PR → human merges to trigger CI/CD
 
 ---
 
 # Phase 4 — Active Learning
 
-**Closing the flywheel:** uncertain predictions become tomorrow's training data
+**Closing the flywheel:** low-confidence predictions become tomorrow's training data
 
 ```
-FastAPI inference
-       │
-  defect detected
-  but low confidence
-       │
-       ▼
- Label Studio ──► 👤 HUMAN annotates bounding boxes
-                         │
-                         ▼
-              Airflow sync_labels DAG (daily)
-              Downloads from Label Studio API
-              Converts to YOLO format (cx, cy, w, h)
-              Writes to data/raw/active_learning/
-                         │
-                         ▼
-              Developer: dvc add data/raw  ──► dvc push
-                         │
-                         ▼
-              Open Pull Request ──► loops back to Phase 1
+FastAPI: defect detected but low confidence
+                 │
+                 ▼
+         Label Studio (annotation queue)
 ```
 
-> Airflow also opens a retraining PR automatically when drift is detected —
-> the human only needs to review and merge it.
-
----
-
-# CI/CD Workflow
-
-**Self-hosted runner** is required — it runs on the same machine as Docker, giving the pipeline direct access to MLflow, RustFS, and Airflow.
+<span class="human">👤 HUMAN GATE</span> &nbsp;Annotate bounding boxes for 6 defect classes in Label Studio
 
 ```
-Pull Request opened / updated
-       │
-       ▼
-ci.yml  ──►  dvc pull (from RustFS)
-         ──►  dvc repro (preprocess + YOLOv8 + eval)
-         ──►  log to MLflow Official (:5556)
-         ──►  CML: post confusion matrix + F1 curves to PR
-
-Merge to main
-       │
-       ▼
-ci.yml  ──►  export best.pt → best.onnx
-         ──►  register @staging in MLflow Model Registry
-         ──►  curl Airflow to trigger model_governance_eval DAG
-
-Governance PR merged
-       │
-       ▼
-deploy.yml  ──►  set @champion alias in MLflow Registry
+Airflow sync_labels DAG (daily)
+  ① Download completed annotations via Label Studio API
+  ② Convert to YOLO format  (cx, cy, w, h  normalised)
+  ③ Write to  data/raw/active_learning/
+                 │
+                 ▼
+  dvc add data/raw  →  dvc push  →  open PR  →  Phase 1
 ```
+
+> Every uncertain prediction eventually improves the model — the flywheel is self-reinforcing
 
 ---
 
 # Human-in-the-Loop Gates
 
-Four checkpoints where a human must approve before the system advances:
+Four checkpoints — **no model reaches production without a human merge**
 
 | Gate | Where | Decision |
 | :--- | :--- | :--- |
 | **H1 — Annotation** | Label Studio | Draw bounding boxes on low-confidence PCB images |
-| **H2 — Training PR** | GitHub PR + CML report | Accept or reject model by reviewing confusion matrix and F1 vs main |
-| **H3 — Governance PR** | GitHub Governance PR | Final safety gate before model reaches production — approving promotes `@champion` |
-| **H4 — Retraining PR** | GitHub Drift PR | Decide whether detected drift warrants a retrain cycle |
+| **H2 — Training PR** | GitHub PR + CML report | Accept or reject model: review confusion matrix and F1 vs main |
+| **H3 — Governance PR** | GitHub Governance PR | Final safety gate before production — merge promotes `@champion` |
+| **H4 — Retraining PR** | GitHub Drift PR | Decide whether detected drift warrants a full retrain cycle |
 
-> No model reaches production without a human merge.
+<br>
+
 > No retraining happens without a human decision.
+> No champion is set without a human merge.
 
 ---
 
-<!-- _class: title -->
-
 # Demo
 
-**Streamlit UI** · `http://localhost:8501`
-Upload a PCB image → get defect bounding boxes + PASS / FAIL
+**Services running locally via Docker Compose:**
 
-**FastAPI Docs** · `http://localhost:8000/docs`
-
-**Airflow** · `http://localhost:8085`
-
-**MLflow Official** · `http://localhost:5556`
-
-**Evidently AI** · `http://localhost:8005`
-
-**Label Studio** · `http://localhost:8080`
+| Service | URL |
+|:---|:---|
+| Streamlit — interactive defect sandbox | `http://localhost:8501` |
+| FastAPI — inference API + Swagger docs | `http://localhost:8000/docs` |
+| Airflow — DAG orchestration | `http://localhost:8085` |
+| MLflow Official — experiment tracking | `http://localhost:5556` |
+| Evidently AI — drift dashboard | `http://localhost:8005` |
+| Label Studio — annotation UI | `http://localhost:8080` |
+| RustFS S3 — data & model storage | `http://localhost:9001` |
 
 ---
 
@@ -293,12 +331,14 @@ Upload a PCB image → get defect bounding boxes + PASS / FAIL
 
 # Key Takeaways
 
-- **Flywheel design**: drift → annotation → retrain → better model → less drift
-- **Three Airflow DAGs** orchestrate all automation: governance, sync+drift, deploy
-- **Four human gates** ensure no model reaches production unchecked
-- **ONNX format** eliminates Mac vs Linux inference discrepancies
-- **Dual MLflow** keeps sandbox experiments separate from official CI/CD runs
-- **Self-hosted runner** bridges GitHub Actions with local Docker infrastructure
+- **Flywheel design** — drift → annotation → retrain → better model → less drift
+- **Three Airflow DAGs** — governance eval, label sync + drift check, deploy
+- **Four human gates** — no model reaches production unchecked
+- **ONNX format** — eliminates Mac vs Linux inference discrepancies
+- **Dual MLflow** — keeps sandbox experiments separate from official CI/CD runs
+- **Self-hosted runner** — bridges GitHub Actions with local Docker infrastructure
 
----
-*PCB Defect Detection MLOps Flywheel · ZHAW Spring 2026*
+<br>
+
+*Bhatia Isha · Chaurasia Vikas · Duss Karin · Müller Jonathan*
+*ZHAW — Machine Learning and Data in Operations · Spring 2026*
