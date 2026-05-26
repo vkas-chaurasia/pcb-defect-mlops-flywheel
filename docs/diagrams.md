@@ -15,40 +15,45 @@ graph TB
     classDef decision fill:#C47A1E,stroke:#8B5615,color:#fff,font-weight:bold
     classDef human    fill:#FFD700,stroke:#8B6914,color:#1a1a1a,font-weight:bold
 
-    subgraph TRAIN["  Training & CI/CD Pipeline  "]
+    subgraph TRAIN["  Training & CI/CD  "]
         direction LR
-        n1["1. DVC\nRustFS S3"]:::mltools
-        n2["2. YOLOv8\nPyTorch"]:::mltools
+        n1["1. ML Repository\nGit · DVC · RustFS"]:::mltools
+        n2["2. GitHub Actions\ndvc repro · YOLOv8 · CML"]:::infra
         n3["3. MLflow\nTracking · Registry"]:::registry
-        n4["4. GitHub Actions\nCI/CD · CML Reports"]:::infra
-        n1 -->|dvc repro| n2
+        n1 -->|dvc pull| n2
         n2 -->|log metrics| n3
-        n3 -->|promote| n4
     end
 
-    subgraph SERVE["  Serving & Monitoring Pipeline  "]
+    subgraph GOV["  Model Governance  "]
         direction LR
-        n5["5. Docker Compose\nAirflow · MLflow · RustFS · Label Studio"]:::infra
-        n6["6. FastAPI\nONNX · :8000"]:::infra
-        n7["7. Streamlit\n:8501"]:::mltools
+        n4["4. Airflow\nmodel_governance_eval"]:::infra
+        H_GOV["HUMAN APPROVAL\nReview Governance PR\n& promote @champion"]:::human
+        n4 -->|"eval passed · open PR"| H_GOV
+    end
+
+    subgraph SERVE["  Serving · Monitoring · Active Learning  "]
+        direction LR
+        n5["5. FastAPI\nONNX Inference"]:::infra
+        n6["6. Streamlit\nFrontend"]:::mltools
+        n7["7. Airflow\nDrift Monitor"]:::infra
         n8{"8. Evidently AI\nDrift Detected?"}:::decision
-        n9["9. Label Studio\n+ Airflow · :8080"]:::mltools
-        n5 --> n6
-        n6 -->|REST API| n7
-        n7 -->|prediction log| n8
-        n8 -->|"Yes — annotate & retrain"| n9
-        n8 -->|"No — keep serving"| n6
+        H_ANNOT["HUMAN\nAnnotate in\nLabel Studio"]:::human
+        n9["9. Airflow\nsync_labels"]:::infra
+        n6 -->|REST API| n5
+        n5 -->|prediction log| n7
+        n7 -->|drift check| n8
+        n8 -->|"Yes — retrain"| H_ANNOT
+        n8 -->|"No — keep serving"| n5
+        H_ANNOT -->|annotated labels| n9
     end
 
     H_PR["HUMAN APPROVAL\nReview CML report\n& merge PR"]:::human
-    H_GOV["HUMAN APPROVAL\nReview Governance PR\n& promote @champion"]:::human
 
-    n4 --- H_PR
-    H_PR -.->|deploy @champion| n5
-    n4 --- H_GOV
+    n2 --- H_PR
+    H_PR -->|"merge to main\nregister @staging"| n4
     H_GOV -.->|set @champion alias| n3
-    n3 -.->|hot reload · 30s| n6
-    n9 -.->|sync labels · loop back to 1| n1
+    n3 -.->|hot reload| n5
+    n9 -.->|sync to data/raw · loop back to 1| n1
 ```
 
 ---
