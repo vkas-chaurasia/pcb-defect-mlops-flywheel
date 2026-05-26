@@ -285,7 +285,7 @@ def start_polling_thread():
             time.sleep(30)
             try:
                 # Check for the @champion model (ONNX format)
-                weights = mlflow.artifacts.download_artifacts(artifact_uri="models:/pcb-defect-model@champion/pcb-yolo-model/best.onnx")
+                weights = mlflow.artifacts.download_artifacts(artifact_uri="models:/pcb-defect-model@champion/best.onnx")
                 if weights != ModelManager._weights:
                     print(f"\n🔄 [HOT RELOAD] New @champion model detected in Registry!")
                     print(f"Old path: {ModelManager._weights}")
@@ -445,7 +445,7 @@ def main(weights: str = None, host: str = "0.0.0.0", port: int = 8000,
             mlflow.set_tracking_uri("http://localhost:5556")
             print("Checking MLflow Model Registry for '@champion' alias (Waiting for your Approval)...")
             # We look for the model with the '@champion' alias
-            weights = mlflow.artifacts.download_artifacts(artifact_uri="models:/pcb-defect-model@champion/weights/best.pt")
+            weights = mlflow.artifacts.download_artifacts(artifact_uri="models:/pcb-defect-model@champion/best.pt")
             print(f"✅ Approved! Using your @champion model: {weights}")
         except Exception as e:
             print(f"⏳ Waiting for you to add the '@champion' alias in MLflow UI. Falling back to local files...")
