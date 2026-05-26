@@ -136,6 +136,7 @@ class ModelManager:
     _weights    = None
     _img_size   = DEFAULT_IMG_SIZE
     _device     = "cpu"
+    _version    = None
 
     @classmethod
     def load(cls, weights: str, img_size: int):
@@ -277,22 +278,27 @@ def start_polling_thread():
     
     def poll_champion_model():
         import mlflow
+        from mlflow.tracking import MlflowClient
         import time
         # Poll the Official Team MLflow (Port 5556) where Governance happens
         mlflow.set_tracking_uri("http://localhost:5556")
+        client = MlflowClient()
         
         while True:
             time.sleep(30)
             try:
-                # Check for the @champion model (ONNX format)
-                weights = mlflow.artifacts.download_artifacts(artifact_uri="models:/pcb-defect-model@champion/best.onnx")
-                if weights != ModelManager._weights:
-                    print(f"\n🔄 [HOT RELOAD] New @champion model detected in Registry!")
-                    print(f"Old path: {ModelManager._weights}")
-                    print(f"New path: {weights}")
+                # 1. Fetch current champion version from registry metadata
+                mv = client.get_model_version_by_alias("pcb-defect-model", "champion")
+                latest_version = mv.version
+                
+                # 2. Only download and hot-reload if the version number has changed!
+                if latest_version != ModelManager._version:
+                    print(f"\n🔄 [HOT RELOAD] New @champion model version detected: {ModelManager._version} ➡️ {latest_version}")
+                    weights = mlflow.artifacts.download_artifacts(artifact_uri="models:/pcb-defect-model@champion/best.onnx")
                     ModelManager.load(weights, ModelManager._img_size)
+                    ModelManager._version = latest_version
                     print("✅ Hot reload complete. New Champion is live.")
-            except Exception:
+            except Exception as e:
                 # Fail silently if MLflow is unreachable or alias doesn't exist yet
                 pass
 
@@ -406,6 +412,7 @@ async def predict_batch(
 
 def main(weights: str = None, host: str = "0.0.0.0", port: int = 8000,
          img_size: int = DEFAULT_IMG_SIZE, workers: int = 1):
+    model_version = None
     """
     Colab usage:
         main(weights="/content/.../best.pt")
@@ -442,11 +449,14 @@ def main(weights: str = None, host: str = "0.0.0.0", port: int = 8000,
         # 1. Try MLflow first (The Modern Human-Gatekeeper Way)
         try:
             import mlflow
+            from mlflow.tracking import MlflowClient
             mlflow.set_tracking_uri("http://localhost:5556")
             print("Checking MLflow Model Registry for '@champion' alias (Waiting for your Approval)...")
-            # We look for the model with the '@champion' alias
+            client = MlflowClient()
+            mv = client.get_model_version_by_alias("pcb-defect-model", "champion")
+            model_version = mv.version
             weights = mlflow.artifacts.download_artifacts(artifact_uri="models:/pcb-defect-model@champion/best.pt")
-            print(f"✅ Approved! Using your @champion model: {weights}")
+            print(f"✅ Approved! Using your @champion model (Version {model_version}): {weights}")
         except Exception as e:
             print(f"⏳ Waiting for you to add the '@champion' alias in MLflow UI. Falling back to local files...")
             
@@ -489,6 +499,8 @@ def main(weights: str = None, host: str = "0.0.0.0", port: int = 8000,
         raise SystemExit(1)
 
     ModelManager.load(str(weights_path), args.img_size)
+    if model_version is not None:
+        ModelManager._version = model_version
     print(f"\nStarting PCB Defect Detection API")
     print(f"  Host     : {args.host}:{args.port}")
     print(f"  Docs     : http://{args.host}:{args.port}/docs\n")
