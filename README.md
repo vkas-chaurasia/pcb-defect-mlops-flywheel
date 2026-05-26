@@ -213,17 +213,21 @@ FastAPI automatically routes low-confidence detections to Label Studio for human
 
 | File | Description |
 | :--- | :--- |
-| [`docs/presentation.md`](docs/presentation.md) | Marp slide deck — 11 slides covering all 4 phases, architecture, CI/CD, and human gates. |
-| [`docs/diagrams.md`](docs/diagrams.md) | Standalone copy of the system architecture diagram. |
+| [`docs/presentation.md`](docs/presentation.md) | Marp source slide deck (edit this to update slides) |
+| [`docs/presentation.pdf`](docs/presentation.pdf) | Exported PDF |
+| [`docs/presentation.pptx`](docs/presentation.pptx) | Exported PowerPoint |
+| [`docs/diagrams/`](docs/diagrams/) | Pre-rendered SVG diagrams used in slides |
+| [`docs/diagrams.md`](docs/diagrams.md) | Standalone system architecture diagram |
 
-**To export the presentation to PDF:**
+See **[docs/README.md](docs/README.md)** for full export instructions (PDF, PPTX, and diagram regeneration).
+
+**Quick export:**
 ```bash
-# Option 1 — CLI
-npx @marp-team/marp-cli docs/presentation.md --pdf
+# PDF
+npx @marp-team/marp-cli docs/presentation.md --pdf --allow-local-files --output docs/presentation.pdf
 
-# Option 2 — VS Code
-# Install the "Marp for VS Code" extension, open docs/presentation.md,
-# click the Marp icon in the top-right, then "Export slide deck"
+# PowerPoint
+npx @marp-team/marp-cli docs/presentation.md --pptx --allow-local-files --output docs/presentation.pptx
 ```
 
 ---

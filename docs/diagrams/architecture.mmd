@@ -1,0 +1,33 @@
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '13px', 'fontFamily': 'Inter'}}}%%
+graph LR
+
+classDef infra fill:#1C2B3A,stroke:#0d1821,color:#fff,font-weight:bold
+classDef ml fill:#1A4731,stroke:#0d2419,color:#fff,font-weight:bold
+classDef registry fill:#1E6B3C,stroke:#0f3a21,color:#fff,font-weight:bold
+classDef decision fill:#C47A1E,stroke:#8B5615,color:#fff,font-weight:bold
+classDef human fill:#FFD700,stroke:#8B6914,color:#1a1a1a,font-weight:bold
+
+A["1. Training Pipeline\nGit · DVC · YOLOv8\nGitHub Actions · CML"]:::ml
+H_PR["HUMAN APPROVAL\nReview CML report\n& merge PR"]:::human
+B["2. MLflow Registry\nTracking · Versioning"]:::registry
+C["3. Governance Evaluation\nAirflow model_governance_eval"]:::infra
+H_GOV["HUMAN APPROVAL\nGovernance PR\n→ promote @champion"]:::human
+E["4. Production Serving\nFastAPI · ONNX · Streamlit"]:::infra
+F{"5. Drift Detected?\nAirflow + Evidently AI\n① sync_labels  ② drift_monitor"}:::decision
+H_RETRAIN["HUMAN APPROVAL\nReview retraining PR\n& merge"]:::human
+G["6. Label Studio\nAnnotation"]:::ml
+H_ANNOT["HUMAN\nAnnotate uncertain\ndefect images"]:::human
+
+A -->|train + validate| H_PR
+H_PR -->|"merge to main · register @staging"| B
+B -->|trigger governance| C
+C -->|"eval passed · open PR"| H_GOV
+H_GOV -.->|set @champion alias| B
+B -.->|hot reload| E
+E -->|prediction_log.csv| F
+F -->|No — keep serving| E
+F -->|"Yes — open retraining PR"| H_RETRAIN
+H_RETRAIN -.->|merge triggers CI/CD| A
+E -->|"low confidence detection"| G
+G --> H_ANNOT
+H_ANNOT -.->|"Airflow sync_labels → data/raw"| A

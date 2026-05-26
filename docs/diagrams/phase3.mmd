@@ -1,0 +1,21 @@
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '14px', 'fontFamily': 'Inter'}}}%%
+flowchart LR
+
+classDef infra fill:#1C2B3A,stroke:#0d1821,color:#fff,font-weight:bold
+classDef ml fill:#1A4731,stroke:#0d2419,color:#fff,font-weight:bold
+classDef decision fill:#C47A1E,stroke:#8B5615,color:#fff,font-weight:bold
+classDef human fill:#FFD700,stroke:#8B6914,color:#1a1a1a,font-weight:bold
+classDef step fill:#F2F2F0,stroke:#3A7D28,color:#1a1a1a
+
+P1["FastAPI\n@champion · ONNX\nPOST /predict"]:::infra
+P2["prediction_log.csv\nlogged per request"]:::step
+P3["Airflow daily DAG\ndata_sync_and_drift_check\n① sync_labels  ② drift_monitor"]:::infra
+P4["Evidently AI\nDrift Report\nconfidence · bbox area\npass_fail"]:::ml
+D1{"≥ 50%\nfeatures\ndrifted?"}:::decision
+P5["No drift\nkeep serving"]:::step
+H_RETRAIN["HUMAN APPROVAL\nReview retraining PR\n& merge → CI/CD"]:::human
+
+P1 --> P2 --> P3 --> P4 --> D1
+D1 -->|"No"| P5 --> P1
+D1 -->|"Yes — open PR"| H_RETRAIN
+H_RETRAIN -.->|"merge triggers CI/CD"| P1
