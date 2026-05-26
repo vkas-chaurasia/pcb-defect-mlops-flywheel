@@ -20,7 +20,7 @@ stages:
       size: 108732755
       nfiles: 4
   train:
-    cmd: python3 src/training/train.py --epochs 10 --img-size 640 --batch 16
+    cmd: python3 src/training/train.py --epochs 5 --img-size 640 --batch 16
     deps:
     - path: data/processed
       hash: md5
@@ -33,7 +33,7 @@ stages:
       size: 10738
     params:
       params.yaml:
-        train.epochs: 10
+        train.epochs: 5
         train.img_size: 640
     outs:
     - path: data/yolo
@@ -43,5 +43,5 @@ stages:
       nfiles: 2993
     - path: metrics.json
       hash: md5
-      md5: 07dc353c5aced7bffacdd948991d5b22
+      md5: 5681357c38c68da558d9f72f7dea603c
       size: 181
