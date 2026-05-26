@@ -140,7 +140,7 @@ with DAG(
             
         # 5. Create Pull Request
         pr_payload = {
-            "title": f"🚀 Model Governance: Promote {MODEL_NAME} v{model_version}",
+            "title": f"deploy: promote {MODEL_NAME} v{model_version} to production",
             "body": f"Automated Governance PR.\n\nThe Airflow evaluation pipeline has verified that **v{model_version}** of **{MODEL_NAME}** passes all safety and performance checks.\n\nApprove and merge this PR to officially deploy this version as the new Champion.",
             "head": branch_name,
             "base": "main"
