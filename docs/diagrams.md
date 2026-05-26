@@ -2,53 +2,50 @@
 
 ---
 
-## Diagram 1: System Architecture
+## System Architecture
 
-> Two-pipeline design: CI/CD training loop (top) feeds the serving and monitoring loop (bottom). The flywheel closes when drift triggers retraining.
+> Linear flywheel: Train → Govern → Serve → Monitor → Active Learning → back to Train. Gold nodes are human gates. Dashed arrows are automated flywheel loops.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '14px'}}}%%
-graph TB
-    classDef infra    fill:#1C2B3A,stroke:#0d1821,color:#fff,font-weight:bold
-    classDef mltools  fill:#1A4731,stroke:#0d2419,color:#fff,font-weight:bold
-    classDef registry fill:#1E6B3C,stroke:#0f3a21,color:#fff,font-weight:bold
-    classDef decision fill:#C47A1E,stroke:#8B5615,color:#fff,font-weight:bold
-    classDef human    fill:#FFD700,stroke:#8B6914,color:#1a1a1a,font-weight:bold
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'fontSize': '14px',
+    'fontFamily': 'Inter'
+  }
+}}%%
+graph LR
 
-    subgraph TRAIN["  Training & CI/CD Pipeline  "]
-        direction LR
-        n1["1. DVC\nRustFS S3"]:::mltools
-        n2["2. YOLOv8\nPyTorch"]:::mltools
-        n3["3. MLflow\nTracking · Registry"]:::registry
-        n4["4. GitHub Actions\nCI/CD · CML Reports"]:::infra
-        n1 -->|dvc repro| n2
-        n2 -->|log metrics| n3
-        n3 -->|promote| n4
-    end
+classDef infra fill:#1C2B3A,stroke:#0d1821,color:#fff,font-weight:bold
+classDef ml fill:#1A4731,stroke:#0d2419,color:#fff,font-weight:bold
+classDef registry fill:#1E6B3C,stroke:#0f3a21,color:#fff,font-weight:bold
+classDef decision fill:#C47A1E,stroke:#8B5615,color:#fff,font-weight:bold
+classDef human fill:#FFD700,stroke:#8B6914,color:#1a1a1a,font-weight:bold
 
-    subgraph SERVE["  Serving & Monitoring Pipeline  "]
-        direction LR
-        n5["5. Docker Compose\nAirflow · MLflow · RustFS · Label Studio"]:::infra
-        n6["6. FastAPI\nONNX · :8000"]:::infra
-        n7["7. Streamlit\n:8501"]:::mltools
-        n8{"8. Evidently AI\nDrift Detected?"}:::decision
-        n9["9. Label Studio\n+ Airflow · :8080"]:::mltools
-        n5 --> n6
-        n6 -->|REST API| n7
-        n7 -->|prediction log| n8
-        n8 -->|"Yes — annotate & retrain"| n9
-        n8 -->|"No — keep serving"| n6
-    end
+A["1. Training Pipeline\nGit · DVC · YOLOv8\nGitHub Actions · CML"]:::ml
+H_PR["HUMAN APPROVAL\nReview CML report\n& merge PR"]:::human
+B["2. MLflow Registry\nTracking · Versioning"]:::registry
+C["3. Governance Evaluation\nAirflow model_governance_eval"]:::infra
+H_GOV["HUMAN APPROVAL\nGovernance PR\n→ promote @champion"]:::human
+E["4. Production Serving\nFastAPI · ONNX · Streamlit"]:::infra
+F{"5. Drift Detected?\nAirflow + Evidently AI\n① sync_labels  ② drift_monitor"}:::decision
+H_RETRAIN["HUMAN APPROVAL\nReview retraining PR\n& merge"]:::human
+G["6. Label Studio\nAnnotation"]:::ml
+H_ANNOT["HUMAN\nAnnotate uncertain\ndefect images"]:::human
 
-    H_PR["HUMAN APPROVAL\nReview CML report\n& merge PR"]:::human
-    H_GOV["HUMAN APPROVAL\nReview Governance PR\n& promote @champion"]:::human
-
-    n4 --- H_PR
-    H_PR -.->|deploy @champion| n5
-    n4 --- H_GOV
-    H_GOV -.->|set @champion alias| n3
-    n3 -.->|hot reload · 30s| n6
-    n9 -.->|sync labels · loop back to 1| n1
+A -->|train + validate| H_PR
+H_PR -->|"merge to main\nregister @staging"| B
+B -->|trigger governance| C
+C -->|"eval passed · open PR"| H_GOV
+H_GOV -.->|set @champion alias| B
+B -.->|hot reload| E
+E -->|prediction_log.csv| F
+F -->|No — keep serving| E
+F -->|"Yes — open retraining PR"| H_RETRAIN
+H_RETRAIN -.->|merge triggers CI/CD| A
+E -->|"defect detected\nbut low confidence"| G
+G --> H_ANNOT
+H_ANNOT -.->|"Airflow sync_labels\n→ data/raw"| A
 ```
 
 ---
