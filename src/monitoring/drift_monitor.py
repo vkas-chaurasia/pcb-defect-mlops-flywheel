@@ -147,33 +147,61 @@ def main():
 
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         branch_name = f"retrain/drift-{timestamp}"
-        
-        # Git and DVC actions
-        print("Registering drift data changes via DVC and pushing to Git...")
-        os.system("dvc add data/raw && dvc push")
-        os.system(f"git checkout -b {branch_name}")
-        os.system("git add data/raw.dvc reports/evidently_drift_report.html reports/drift_results.json")
-        os.system(f"git commit -m 'chore: drift detected, syncing data'")
-        os.system(f"git push origin {branch_name}")
-        
+        api_base = f"https://api.github.com/repos/{repo}"
+
+        # 1. Get main branch SHA
+        res = requests.get(f"{api_base}/git/ref/heads/main", headers=headers)
+        if res.status_code != 200:
+            print(f"Failed to get main SHA: {res.status_code} - {res.text}")
+            return
+        main_sha = res.json()["object"]["sha"]
+
+        # 2. Create new branch via API (no git needed in container)
+        res = requests.post(f"{api_base}/git/refs", headers=headers, json={
+            "ref": f"refs/heads/{branch_name}",
+            "sha": main_sha
+        })
+        if res.status_code not in (201, 422):
+            print(f"Failed to create branch: {res.status_code} - {res.text}")
+            return
+        print(f"Branch created: {branch_name}")
+
+        # 3. Commit drift report files via API
+        import base64
+        files_to_commit = {
+            "reports/evidently_drift_report.html": reports_dir / "evidently_drift_report.html",
+            "reports/drift_results.json": reports_dir / "drift_results.json",
+        }
+        for file_path, local_path in files_to_commit.items():
+            if not local_path.exists():
+                continue
+            content_b64 = base64.b64encode(local_path.read_bytes()).decode()
+            existing = requests.get(f"{api_base}/contents/{file_path}?ref={branch_name}", headers=headers)
+            payload = {
+                "message": f"chore: drift detected, adding report ({timestamp})",
+                "content": content_b64,
+                "branch": branch_name,
+            }
+            if existing.status_code == 200:
+                payload["sha"] = existing.json()["sha"]
+            requests.put(f"{api_base}/contents/{file_path}", headers=headers, json=payload)
+        print("Drift report files committed to branch.")
+
         pr_body = (
             "## 🔄 Drift Detected - Retraining Required\n\n"
-            "Data drift has been detected in production predictions using Evidently AI.\n"
-            "The updated data has been synced and versioned with DVC.\n\n"
+            "Data drift has been detected in production predictions using Evidently AI.\n\n"
             "### Drift Summary\n"
             f"- **Evidently AI Dataset Drift:** {evidently_drift_detected}\n\n"
             "Please review the attached drift report (`reports/evidently_drift_report.html`) and check the Evidently AI UI dashboard before approving retraining.\n\n"
             "**To trigger training on this branch, approve this PR or comment `/train`.**"
         )
-        
-        url = f"https://api.github.com/repos/{repo}/pulls"
-        data = {
+
+        res = requests.post(f"{api_base}/pulls", headers=headers, json={
             "title": f"🔄 Drift Detected - Retraining Required ({timestamp})",
             "head": branch_name,
             "base": "main",
-            "body": pr_body
-        }
-        res = requests.post(url, headers=headers, json=data)
+            "body": pr_body,
+        })
         if res.status_code == 201:
             print(f"PR created successfully: {res.json()['html_url']}")
         else:
