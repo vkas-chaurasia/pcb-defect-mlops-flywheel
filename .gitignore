@@ -248,3 +248,5 @@ last_run_path.txt
 monitoring/prediction_log.csv
 
 /mlflow-official-history
+.airflow/
+

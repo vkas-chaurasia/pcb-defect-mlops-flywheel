@@ -63,10 +63,17 @@ with DAG(
         
         # We need to run the script using the uv python environment if possible
         # but standard python is fine if uv environment is active.
-        result = subprocess.run(["python", "src/utils/evaluate_staging_model.py"])
-        
+        result = subprocess.run(
+            ["python", "src/utils/evaluate_staging_model.py"],
+            capture_output=True, text=True
+        )
+        if result.stdout:
+            print(result.stdout)
+        if result.stderr:
+            print("STDERR:", result.stderr)
+
         passed_evaluation = (result.returncode == 0)
-        
+
         # 2. State Machine: Record the outcome
         if not passed_evaluation:
             client.set_model_version_tag(MODEL_NAME, mv.version, "validation_status", "failed")
