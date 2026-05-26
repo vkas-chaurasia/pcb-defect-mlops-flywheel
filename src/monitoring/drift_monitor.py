@@ -210,7 +210,7 @@ def main():
         )
 
         res = requests.post(f"{api_base}/pulls", headers=headers, json={
-            "title": f"🔄 Drift Detected - Retraining Required ({timestamp})",
+            "title": f"drift: retraining required - data drift detected ({timestamp})",
             "head": branch_name,
             "base": "main",
             "body": pr_body,
