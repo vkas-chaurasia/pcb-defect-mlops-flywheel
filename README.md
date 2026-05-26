@@ -25,90 +25,51 @@ This repository implements a production-grade MLOps ecosystem for automated PCB 
 
 ## System Architecture
 
-The diagram below shows every service, its port, and how data flows between infrastructure layers. Gold nodes mark the four **human-in-the-loop** decision points that gate automation.
+Two-pipeline design: the **CI/CD training loop** (top) continuously produces better models; the **serving and monitoring loop** (bottom) runs them in production. The flywheel closes when drift triggers retraining.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '13px'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '14px'}}}%%
 graph TB
-    classDef human   fill:#FFD700,stroke:#8B6914,color:#1a1a1a,font-weight:bold
-    classDef svc     fill:#DBEAFE,stroke:#2563EB,color:#1E3A5F
-    classDef orch    fill:#DCFCE7,stroke:#16A34A,color:#14532D
-    classDef track   fill:#FEF3C7,stroke:#D97706,color:#451A03
-    classDef ghnode  fill:#1F2937,stroke:#6B7280,color:#F9FAFB
-    classDef store   fill:#F3E8FF,stroke:#7C3AED,color:#2E1065
-    classDef prnode  fill:#FEE2E2,stroke:#DC2626,color:#450A0A
+    classDef infra    fill:#1C2B3A,stroke:#0d1821,color:#fff,font-weight:bold
+    classDef mltools  fill:#1A4731,stroke:#0d2419,color:#fff,font-weight:bold
+    classDef registry fill:#1E6B3C,stroke:#0f3a21,color:#fff,font-weight:bold
+    classDef decision fill:#C47A1E,stroke:#8B5615,color:#fff,font-weight:bold
+    classDef human    fill:#FFD700,stroke:#8B6914,color:#1a1a1a,font-weight:bold
 
-    subgraph WS["Local Workstation  (Python — not Docker)"]
+    subgraph TRAIN["  Training & CI/CD Pipeline  "]
         direction LR
-        STREAMLIT["Streamlit UI\n:8501"]:::svc
-        FASTAPI["FastAPI Inference Server\n:8000"]:::svc
-        RUNNER["GitHub Self-Hosted Runner"]:::svc
+        n1["1. DVC\nRustFS S3"]:::mltools
+        n2["2. YOLOv8\nPyTorch"]:::mltools
+        n3["3. MLflow\nTracking · Registry"]:::registry
+        n4["4. GitHub Actions\nCI/CD · CML Reports"]:::infra
+        n1 -->|dvc repro| n2
+        n2 -->|log metrics| n3
+        n3 -->|promote| n4
     end
 
-    subgraph DOCKER["Docker Infrastructure"]
-        direction TB
-        AIRFLOW["Apache Airflow\n:8085\n(Orchestrator)"]:::orch
-        subgraph MLF["Model Tracking"]
-            MLFLOW_SB["MLflow Sandbox\n:5555  (dev)"]:::track
-            MLFLOW_OFF["MLflow Official\n:5556  (team)"]:::track
-        end
-        LS["Label Studio\n:8080\n(Annotation)"]:::svc
-        EV_UI["Evidently UI\n:8005\n(Drift Dashboard)"]:::svc
-        RUSTFS["RustFS S3\n:9000 / :9001\n(Object Storage)"]:::store
-    end
-
-    subgraph GH["GitHub"]
-        direction TB
-        CICD["Actions CI/CD\n(ci.yml + deploy.yml)"]:::ghnode
-        PR_TRAIN["Training PR\n+ CML Report"]:::prnode
-        PR_DRIFT["Drift PR\n(retrain/drift-*)"]:::prnode
-        PR_GOV["Governance PR\n(promote-model-v*)"]:::prnode
-    end
-
-    subgraph DATA["Data & Registry Layer"]
+    subgraph SERVE["  Serving & Monitoring Pipeline  "]
         direction LR
-        DVC_DATA[("data/raw\nDVC tracked")]:::store
-        PRED_LOG[("prediction_log.csv\n+ reference_predictions.csv")]:::store
-        EV_WS[("monitoring/evidently_workspace")]:::store
-        MODEL_REG[("MLflow Model Registry\n@staging  /  @champion")]:::store
+        n5["5. Docker Compose\nAirflow · MLflow · RustFS · Label Studio"]:::infra
+        n6["6. FastAPI\nONNX · :8000"]:::infra
+        n7["7. Streamlit\n:8501"]:::mltools
+        n8{"8. Evidently AI\nDrift Detected?"}:::decision
+        n9["9. Label Studio\n+ Airflow · :8080"]:::mltools
+        n5 --> n6
+        n6 -->|REST API| n7
+        n7 -->|prediction log| n8
+        n8 -->|"Yes — annotate & retrain"| n9
+        n8 -->|"No — keep serving"| n6
     end
 
-    H1["HUMAN IN THE LOOP\nAnnotates defect\nbounding boxes"]:::human
-    H2["HUMAN IN THE LOOP\nReviews CML report,\nmerges Training PR"]:::human
-    H3["HUMAN IN THE LOOP\nApproves Governance PR\n→ promotes @champion"]:::human
-    H4["HUMAN IN THE LOOP\nReviews Evidently drift\nreport, initiates retrain"]:::human
+    H_PR["HUMAN APPROVAL\nReview CML report\n& merge PR"]:::human
+    H_GOV["HUMAN APPROVAL\nReview Governance PR\n& promote @champion"]:::human
 
-    STREAMLIT -->|"uploads PCB image"| FASTAPI
-    FASTAPI -->|"logs: confidence, bbox_area, pass_fail"| PRED_LOG
-    FASTAPI -->|"polls @champion every 30 s (hot-reload)"| MODEL_REG
-    FASTAPI -.->|"dev: sandbox runs"| MLFLOW_SB
-
-    RUNNER -->|"triggers on PR / push"| CICD
-    CICD -->|"dvc pull → dvc repro (train + eval)"| MLFLOW_OFF
-    CICD -->|"posts visual report"| PR_TRAIN
-    PR_TRAIN --- H2
-    H2 -->|"merge to main"| CICD
-    CICD -->|"export ONNX, register @staging"| MODEL_REG
-    CICD -->|"trigger Airflow governance DAG"| AIRFLOW
-
-    AIRFLOW -->|"sync_labels DAG: sync annotations"| LS
-    AIRFLOW -->|"drift DAG: read prediction log"| PRED_LOG
-    AIRFLOW -->|"drift DAG: write Evidently snapshots"| EV_WS
-    AIRFLOW -->|"drift detected: create PR via GitHub API"| PR_DRIFT
-    AIRFLOW -->|"model_eval DAG: test @staging model"| MODEL_REG
-    AIRFLOW -->|"eval passed: create PR via GitHub API"| PR_GOV
-
-    PR_DRIFT --- H4
-    PR_GOV --- H3
-    H3 -->|"merge governance PR"| CICD
-    CICD -->|"deploy.yml: set @champion alias"| MODEL_REG
-
-    LS --- H1
-    H1 -->|"annotated YOLO labels → active_learning/"| DVC_DATA
-
-    EV_UI -->|"reads workspace (browser refresh)"| EV_WS
-    DVC_DATA <-->|"dvc push / pull"| RUSTFS
-    MLFLOW_OFF <-->|"artifact storage"| RUSTFS
+    n4 --- H_PR
+    H_PR -.->|deploy @champion| n5
+    n4 --- H_GOV
+    H_GOV -.->|set @champion alias| n3
+    n3 -.->|hot reload · 30s| n6
+    n9 -.->|sync labels · loop back to 1| n1
 ```
 
 ---
@@ -176,93 +137,6 @@ To use the automated GitHub CI/CD pipelines, a local runner is required:
 ---
 
 ## The Complete MLOps Flywheel Workflow
-
-The pipeline runs as a continuous four-phase loop. Every retrain strengthens the model; every annotation improves the data. Gold nodes below mark **human approval gates** — automation cannot advance without them.
-
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '13px'}}}%%
-flowchart TD
-    classDef human    fill:#FFD700,stroke:#8B6914,color:#1a1a1a,font-weight:bold
-    classDef auto     fill:#DBEAFE,stroke:#2563EB,color:#1E3A5F
-    classDef decision fill:#FEF9C3,stroke:#CA8A04,color:#451A03
-    classDef phase    fill:#F0FDF4,stroke:#16A34A,color:#14532D,font-weight:bold
-    classDef terminal fill:#F0FDF4,stroke:#16A34A,color:#14532D
-
-    FLYWHEEL(["MLOps Flywheel — entry point\nnew data  or  drift detected"]):::terminal
-
-    subgraph P1["Phase 1 — Train & Validate"]
-        direction TB
-        PR_OPEN["Developer opens Pull Request\n(updated params.yaml or new data)"]:::auto
-        CI_TRAIN["CI/CD: dvc pull from RustFS\n→ dvc repro  (preprocess + train + eval)\n→ log metrics to MLflow Official :5556"]:::auto
-        CML_RPT["Post CML report to PR:\nConfusion Matrix, F1, PR-curve + MLflow links"]:::auto
-        H2["HUMAN IN THE LOOP\nReview CML report and metrics diff vs main\nRequest changes  OR  approve merge"]:::human
-        MERGE_DEC{"Approve\nmerge?"}:::decision
-        MERGE["Merge to main branch"]:::auto
-        REG_STAGING["CI/CD: export ONNX → register in MLflow\nApply @staging alias"]:::auto
-    end
-
-    subgraph P2["Phase 2 — Model Governance"]
-        direction TB
-        EVAL_DAG["Airflow: model_governance_eval DAG\ntriggered by CI/CD after push to main"]:::auto
-        EVAL_RUN["Fetch @staging from MLflow\nRun evaluate_staging_model.py\nagainst golden validation set"]:::auto
-        EVAL_DEC{"Passes\nevaluation?"}:::decision
-        GOV_PR["Airflow creates Governance PR\nupdates deployment-repo/production_version.json\nvia GitHub API"]:::auto
-        H3["HUMAN IN THE LOOP\nReview Governance PR\nVerify safety, accuracy, compliance\nApprove promotion to Production"]:::human
-        GOV_DEC{"Approve\npromotion?"}:::decision
-        CHAMPION["deploy.yml: set @champion alias in MLflow\nFastAPI hot-reloads within 30 s"]:::auto
-    end
-
-    subgraph P3["Phase 3 — Serve & Monitor"]
-        direction TB
-        SERVE["FastAPI :8000 loads @champion from MLflow\nStreamlit UI :8501 for interactive inference"]:::auto
-        INFER["Production inference:\nPCB image → YOLO defect detection → PASS / FAIL"]:::auto
-        LOG["Log per-request metrics to prediction_log.csv:\navg_confidence, avg_bbox_area, pass_fail"]:::auto
-        DRIFT_DAG["Airflow: daily data_sync_and_drift_check DAG\nread last 100 rows of prediction_log.csv"]:::auto
-        EV_RUN["Evidently AI: compute Data Drift Report\nvs reference_predictions.csv baseline\nfeatures: avg_confidence, avg_bbox_area, pass_fail"]:::auto
-        EV_SAVE["Save HTML + JSON drift report\nregister snapshot in Evidently Workspace\nvisible in Evidently UI :8005"]:::auto
-        DRIFT_DEC{"≥50% features\ndrifted?"}:::decision
-        DRIFT_PR["Airflow creates Drift PR  (retrain/drift-*)\nattaches Evidently HTML report via GitHub API"]:::auto
-        H4["HUMAN IN THE LOOP\nInspect Evidently drift report in PR\nReview confidence trend and failure rate shift\nDecide: retrain now  or  continue monitoring"]:::human
-        RETRAIN_DEC{"Approve\nretrain?"}:::decision
-    end
-
-    subgraph P4["Phase 4 — Active Learning & Data Refinement"]
-        direction TB
-        COLLECT["Collect unseen / drifted PCB images\nfrom production or simulation directory"]:::auto
-        UPLOAD["Upload images to Label Studio\nor use Streamlit active-learning loop"]:::auto
-        H1["HUMAN IN THE LOOP\nAnnotate defect bounding boxes in Label Studio\n(open, short, mousebite, spur, pin_hole, spurious_copper)"]:::human
-        SYNC_DAG["Airflow sync_labels DAG:\ndownload annotations from Label Studio API\nconvert to YOLO format  (idempotent — marks tasks synced)"]:::auto
-        DVC_PUSH["dvc add data/raw  →  dvc push to RustFS S3\ngit commit dvc.lock  →  open Pull Request"]:::auto
-    end
-
-    FLYWHEEL --> PR_OPEN
-    PR_OPEN --> CI_TRAIN --> CML_RPT --> H2 --> MERGE_DEC
-    MERGE_DEC -- "Reject — request changes" --> PR_OPEN
-    MERGE_DEC -- "Approve" --> MERGE --> REG_STAGING
-    REG_STAGING --> EVAL_DAG --> EVAL_RUN --> EVAL_DEC
-    EVAL_DEC -- "Fail — tag failed, skip governance" --> EVAL_DAG
-    EVAL_DEC -- "Pass — tag passed" --> GOV_PR --> H3 --> GOV_DEC
-    GOV_DEC -- "Reject" --> EVAL_DAG
-    GOV_DEC -- "Approve and merge" --> CHAMPION
-    CHAMPION --> SERVE --> INFER --> LOG
-    LOG --> DRIFT_DAG --> EV_RUN --> EV_SAVE --> DRIFT_DEC
-    DRIFT_DEC -- "No drift — keep serving" --> INFER
-    DRIFT_DEC -- "Drift detected" --> DRIFT_PR --> H4 --> RETRAIN_DEC
-    RETRAIN_DEC -- "Not now — keep monitoring" --> INFER
-    RETRAIN_DEC -- "Yes — retrain" --> COLLECT
-    COLLECT --> UPLOAD --> H1 --> SYNC_DAG --> DVC_PUSH --> PR_OPEN
-```
-
-### Human-in-the-Loop Gates
-
-| Gate | Triggered by | Human decision |
-|:--|:--|:--|
-| **H1 — Annotation** | New images uploaded to Label Studio | Draw bounding boxes for all 6 defect classes; label quality directly determines model quality |
-| **H2 — Training PR review** | CI/CD posts CML report on Pull Request | Accept or reject model performance against main by reviewing confusion matrix and F1 curves |
-| **H3 — Governance approval** | Airflow opens Governance PR after @staging passes evaluation | Final safety gate before production; merging this PR is what promotes the model to @champion |
-| **H4 — Drift retraining decision** | Airflow opens Drift PR when Evidently detects significant distribution shift | Decide whether the detected drift warrants a full retrain or if monitoring should continue |
-
----
 
 ### Phase 1: Training and Validation
 Pull the raw data from local S3 storage:

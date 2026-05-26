@@ -4,99 +4,51 @@
 
 ## Diagram 1: System Architecture
 
-> All services, their ports, data flows, and human-in-the-loop touchpoints (gold nodes).
+> Two-pipeline design: CI/CD training loop (top) feeds the serving and monitoring loop (bottom). The flywheel closes when drift triggers retraining.
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '13px'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '14px'}}}%%
 graph TB
-    classDef human   fill:#FFD700,stroke:#8B6914,color:#1a1a1a,font-weight:bold
-    classDef svc     fill:#DBEAFE,stroke:#2563EB,color:#1E3A5F
-    classDef orch    fill:#DCFCE7,stroke:#16A34A,color:#14532D
-    classDef track   fill:#FEF3C7,stroke:#D97706,color:#451A03
-    classDef ghnode  fill:#1F2937,stroke:#6B7280,color:#F9FAFB
-    classDef store   fill:#F3E8FF,stroke:#7C3AED,color:#2E1065
-    classDef prnode  fill:#FEE2E2,stroke:#DC2626,color:#450A0A
+    classDef infra    fill:#1C2B3A,stroke:#0d1821,color:#fff,font-weight:bold
+    classDef mltools  fill:#1A4731,stroke:#0d2419,color:#fff,font-weight:bold
+    classDef registry fill:#1E6B3C,stroke:#0f3a21,color:#fff,font-weight:bold
+    classDef decision fill:#C47A1E,stroke:#8B5615,color:#fff,font-weight:bold
+    classDef human    fill:#FFD700,stroke:#8B6914,color:#1a1a1a,font-weight:bold
 
-    %% ── Developer Workstation ──────────────────────────────────────────────
-    subgraph WS["🖥️  Local Workstation  (Python — not Docker)"]
+    subgraph TRAIN["  Training & CI/CD Pipeline  "]
         direction LR
-        STREAMLIT["Streamlit UI\n:8501"]:::svc
-        FASTAPI["FastAPI Inference Server\n:8000"]:::svc
-        RUNNER["GitHub Self-Hosted Runner"]:::svc
+        n1["1. DVC\nRustFS S3"]:::mltools
+        n2["2. YOLOv8\nPyTorch"]:::mltools
+        n3["3. MLflow\nTracking · Registry"]:::registry
+        n4["4. GitHub Actions\nCI/CD · CML Reports"]:::infra
+        n1 -->|dvc repro| n2
+        n2 -->|log metrics| n3
+        n3 -->|promote| n4
     end
 
-    %% ── Docker Infrastructure ─────────────────────────────────────────────
-    subgraph DOCKER["🐳  Docker Infrastructure"]
-        direction TB
-        AIRFLOW["Apache Airflow\n:8085\n(Orchestrator)"]:::orch
-
-        subgraph MLF["Model Tracking"]
-            MLFLOW_SB["MLflow Sandbox\n:5555  (dev)"]:::track
-            MLFLOW_OFF["MLflow Official\n:5556  (team)"]:::track
-        end
-
-        LS["Label Studio\n:8080\n(Annotation)"]:::svc
-        EV_UI["Evidently UI\n:8005\n(Drift Dashboard)"]:::svc
-        RUSTFS["RustFS S3\n:9000 / :9001\n(Object Storage)"]:::store
-    end
-
-    %% ── GitHub ────────────────────────────────────────────────────────────
-    subgraph GH["  GitHub"]
-        direction TB
-        CICD["Actions CI/CD\n(ci.yml + deploy.yml)"]:::ghnode
-        PR_TRAIN["Training PR\n+ CML Report\n(Confusion Matrix, F1)"]:::prnode
-        PR_DRIFT["Drift PR\n(retrain/drift-*)"]:::prnode
-        PR_GOV["Governance PR\n(promote-model-v*)"]:::prnode
-    end
-
-    %% ── Data & Registry ──────────────────────────────────────────────────
-    subgraph DATA["💾  Data & Registry Layer"]
+    subgraph SERVE["  Serving & Monitoring Pipeline  "]
         direction LR
-        DVC_DATA[("data/raw\nDVC tracked")]:::store
-        PRED_LOG[("prediction_log.csv\n+ reference_predictions.csv")]:::store
-        EV_WS[("monitoring/evidently_workspace")]:::store
-        MODEL_REG[("MLflow Model Registry\n@staging  /  @champion")]:::store
+        n5["5. Docker Compose\nAirflow · MLflow · RustFS · Label Studio"]:::infra
+        n6["6. FastAPI\nONNX · :8000"]:::infra
+        n7["7. Streamlit\n:8501"]:::mltools
+        n8{"8. Evidently AI\nDrift Detected?"}:::decision
+        n9["9. Label Studio\n+ Airflow · :8080"]:::mltools
+        n5 --> n6
+        n6 -->|REST API| n7
+        n7 -->|prediction log| n8
+        n8 -->|"Yes — annotate & retrain"| n9
+        n8 -->|"No — keep serving"| n6
     end
 
-    %% ── Human-in-the-Loop Nodes ──────────────────────────────────────────
-    H1["👤 HUMAN IN THE LOOP\nAnnotates defect\nbounding boxes"]:::human
-    H2["👤 HUMAN IN THE LOOP\nReviews CML report,\nmerges Training PR"]:::human
-    H3["👤 HUMAN IN THE LOOP\nApproves Governance PR\n→ promotes @champion"]:::human
-    H4["👤 HUMAN IN THE LOOP\nReviews Evidently drift\nreport, initiates retrain"]:::human
+    H_PR["HUMAN APPROVAL\nReview CML report\n& merge PR"]:::human
+    H_GOV["HUMAN APPROVAL\nReview Governance PR\n& promote @champion"]:::human
 
-    %% ── Connections ───────────────────────────────────────────────────────
-    STREAMLIT -->|"uploads PCB image"| FASTAPI
-    FASTAPI -->|"logs: confidence,\nbbox_area, pass_fail"| PRED_LOG
-    FASTAPI -->|"polls @champion\nevery 30 s (hot-reload)"| MODEL_REG
-    FASTAPI -.->|"dev: sandbox runs"| MLFLOW_SB
-
-    RUNNER -->|"triggers on PR / push"| CICD
-    CICD -->|"dvc pull → dvc repro\n(train + evaluate)"| MLFLOW_OFF
-    CICD -->|"posts visual report"| PR_TRAIN
-    PR_TRAIN --- H2
-    H2 -->|"merge to main"| CICD
-    CICD -->|"export ONNX, register @staging"| MODEL_REG
-    CICD -->|"trigger Airflow\ngovernance DAG via API"| AIRFLOW
-
-    AIRFLOW -->|"sync_labels DAG:\nsync annotations"| LS
-    AIRFLOW -->|"drift DAG:\nread prediction log"| PRED_LOG
-    AIRFLOW -->|"drift DAG:\nwrite Evidently snapshots"| EV_WS
-    AIRFLOW -->|"drift detected:\ncreate PR via GitHub API"| PR_DRIFT
-    AIRFLOW -->|"model_eval DAG:\ntest @staging model"| MODEL_REG
-    AIRFLOW -->|"eval passed:\ncreate PR via GitHub API"| PR_GOV
-
-    PR_DRIFT --- H4
-    PR_GOV --- H3
-    H3 -->|"merge governance PR"| CICD
-    CICD -->|"deploy.yml: read\nproduction_version.json\nset @champion alias"| MODEL_REG
-
-    LS --- H1
-    H1 -->|"annotated YOLO labels\n→ active_learning/"| DVC_DATA
-
-    EV_UI -->|"reads workspace\n(browser refresh)"| EV_WS
-
-    DVC_DATA <-->|"dvc push / pull"| RUSTFS
-    MLFLOW_OFF <-->|"artifact storage"| RUSTFS
+    n4 --- H_PR
+    H_PR -.->|deploy @champion| n5
+    n4 --- H_GOV
+    H_GOV -.->|set @champion alias| n3
+    n3 -.->|hot reload · 30s| n6
+    n9 -.->|sync labels · loop back to 1| n1
 ```
 
 ---
