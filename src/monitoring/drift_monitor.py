@@ -89,10 +89,11 @@ def main():
         snapshot.save_html(str(evidently_report_path))
         print(f"Saved Evidently AI HTML report to {evidently_report_path}")
         
-        # Extract drift status
-        for metric_result in snapshot.metrics:
-            if hasattr(metric_result.result, 'dataset_drift'):
-                evidently_drift_detected = metric_result.result.dataset_drift
+        # Extract drift status from DriftedColumnsCount (Evidently 0.7.x API)
+        for result in snapshot.dump_dict().get("metric_results", {}).values():
+            if "DriftedColumnsCount" in result.get("type", ""):
+                share = result.get("share", {}).get("value", 0)
+                evidently_drift_detected = share >= 0.5
                 break
         print(f"Evidently AI dataset_drift result: {evidently_drift_detected}")
     except Exception as e:
