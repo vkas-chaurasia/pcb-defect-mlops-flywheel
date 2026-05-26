@@ -179,8 +179,8 @@ uv run python -m src.serving.serve
 - **Airflow Automation**: The `data_sync_and_drift_check_dag` runs daily — it first syncs any completed annotations from Label Studio, then analyzes live FastAPI prediction logs against the baseline using Evidently AI. If significant drift is detected, Airflow automatically opens a retraining Pull Request via the GitHub API.
 
 ### Phase 4: Active Learning and Refinement
-FastAPI automatically routes uncertain predictions to Label Studio for human review:
-1. **Automatic routing**: When FastAPI detects defects with low confidence, it saves those images to `data/raw/unseen_simulation/`. Label Studio reads them directly via FastAPI's static file server — no manual upload needed.
+FastAPI automatically routes low-confidence detections to Label Studio for human review:
+1. **Automatic routing**: When FastAPI detects defects with low confidence, those images are queued in Label Studio for annotation.
 2. **Human annotation**: Open Label Studio and annotate the queued images with defect bounding boxes.
 3. **Automated sync**: The Airflow `data_sync_and_drift_check_dag` runs daily — it pulls completed annotations from Label Studio via the API, converts them to YOLO format, and writes them to `data/raw/active_learning/`.
 4. **Trigger retraining**: Airflow opens a retraining PR automatically when drift is detected. A developer can also open a PR manually after versioning new data:
