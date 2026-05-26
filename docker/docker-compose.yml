@@ -94,7 +94,7 @@ services:
       - ..:/opt/airflow/project
       - airflow-db:/root/airflow
     working_dir: /opt/airflow/project
-    command: bash -c "pip install --no-cache-dir torch 'mlflow==2.22.1' 'ultralytics!=8.0.0' opencv-python-headless onnx onnxruntime onnxslim && airflow db migrate && (airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true) && airflow standalone"
+    command: bash -c "pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu torch 'mlflow==2.22.1' 'ultralytics>=8.1.0' opencv-python-headless onnx onnxruntime onnxslim && airflow db migrate && (airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true) && airflow standalone"
 
 volumes:
   airflow-db:
