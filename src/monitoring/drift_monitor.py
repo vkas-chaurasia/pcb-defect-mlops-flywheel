@@ -205,7 +205,8 @@ def main():
             "   git commit -m 'data: add new samples for retraining'\n"
             f"   git push origin {branch_name}\n"
             "   ```\n"
-            "4. Merge this PR or comment `/train` to trigger the retraining pipeline.\n"
+            "4. Pushing the DVC update above will automatically trigger CI/CD training — review the CML report posted in this PR.\n"
+            "5. Merge to export the model to ONNX and register it as `@staging` in the MLflow Model Registry.\n"
         )
 
         res = requests.post(f"{api_base}/pulls", headers=headers, json={
