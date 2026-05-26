@@ -94,7 +94,7 @@ services:
       - ..:/opt/airflow/project
       - airflow-db:/root/airflow
     working_dir: /opt/airflow/project
-    command: bash -c "pip install torch pandas numpy requests label-studio-sdk python-dotenv dvc[s3] mlflow ultralytics opencv-python-headless onnx onnxruntime onnxslim 'ml-dtypes>=0.5.0' && pip uninstall -y opencv-python && airflow db migrate && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true && airflow standalone"
+    command: bash -c "pip install torch pandas numpy requests label-studio-sdk python-dotenv dvc[s3] mlflow ultralytics opencv-python-headless onnx onnxruntime onnxslim && pip uninstall -y opencv-python && airflow db migrate && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true && airflow standalone"
 
 volumes:
   airflow-db:
