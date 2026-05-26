@@ -251,3 +251,4 @@ monitoring/prediction_log.csv
 .airflow/
 monitoring/evidently_workspace/
 
+airflow-db/
