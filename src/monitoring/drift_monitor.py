@@ -90,10 +90,9 @@ def main():
         print(f"Saved Evidently AI HTML report to {evidently_report_path}")
         
         # Extract drift status
-        evidently_dict = snapshot.as_dict()
-        for metric in evidently_dict.get("metrics", []):
-            if "dataset_drift" in metric.get("result", {}):
-                evidently_drift_detected = metric["result"]["dataset_drift"]
+        for metric_result in snapshot.metrics:
+            if hasattr(metric_result.result, 'dataset_drift'):
+                evidently_drift_detected = metric_result.result.dataset_drift
                 break
         print(f"Evidently AI dataset_drift result: {evidently_drift_detected}")
     except Exception as e:
