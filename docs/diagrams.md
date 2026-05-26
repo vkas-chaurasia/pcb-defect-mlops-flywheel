@@ -2,7 +2,7 @@
 
 ---
 
-## Diagram 1: System Architecture
+## System Architecture
 
 > Linear flywheel: Train → Govern → Serve → Monitor → Active Learning → back to Train. Gold nodes are human gates. Dashed arrows are automated flywheel loops.
 
