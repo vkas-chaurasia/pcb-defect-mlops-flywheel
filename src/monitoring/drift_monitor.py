@@ -90,8 +90,10 @@ def main():
         print(f"Saved Evidently AI HTML report to {evidently_report_path}")
         
         # Extract drift status from DriftedColumnsCount (Evidently 0.7.x API)
+        # Note: top-level "type" is "CountValue"; DriftedColumnsCount is in nested params
         for result in snapshot.dump_dict().get("metric_results", {}).values():
-            if "DriftedColumnsCount" in result.get("type", ""):
+            params_type = result.get("metric_value_location", {}).get("metric", {}).get("params", {}).get("type", "")
+            if "DriftedColumnsCount" in params_type:
                 share = result.get("share", {}).get("value", 0)
                 evidently_drift_detected = share >= 0.5
                 break
