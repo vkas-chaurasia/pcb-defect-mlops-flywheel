@@ -120,7 +120,7 @@ Before a model reaches production, it must pass governance:
 - **Promotion to Champion**: Once a human approves and merges the Governance PR, a GitHub Action automatically updates the MLflow Registry, promoting the model to `@champion`.
 
 ### Phase 3: Serving and Monitoring
-Deploy the champion model to the FastAPI server for real-time inference. The server continuously logs prediction confidence for drift analysis.
+Deploy the champion model to the FastAPI server for real-time inference. The server continuously logs prediction metrics to `monitoring/prediction_log.csv` for drift analysis.
 ```bash
 # Serves the champion model from the MLflow registry
 uv run python -m src.serving.serve
