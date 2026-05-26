@@ -8,6 +8,8 @@ This repository implements a production-grade MLOps ecosystem for automated PCB 
 
 | Component | Technology | Role |
 | :--- | :--- | :--- |
+| **Code Versioning** | [Git](https://git-scm.com/) · [GitHub](https://github.com/) | Source control and collaboration hub for all code, configs, and CI/CD workflows. |
+| **CI/CD** | [GitHub Actions](https://docs.github.com/en/actions) + Self-hosted Runner | Automated training pipeline triggered on PRs; self-hosted runner gives direct access to local Docker services. |
 | **Detection** | [YOLOv8](https://ultralytics.com/) | State-of-the-art object detection for 6 defect types. |
 | **Model Format** | [ONNX](https://onnx.ai/) | Universal, hardware-agnostic computation graph (resolves Mac vs Linux inference bugs). |
 | **Inference API** | [FastAPI](https://fastapi.tiangolo.com/) | High-performance model serving (Port 8000) with integrated prediction logging. |
