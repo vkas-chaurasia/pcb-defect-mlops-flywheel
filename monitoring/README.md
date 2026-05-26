@@ -46,11 +46,10 @@ This is the confidence score of the single most certain defect detected on the P
 
 ## Drift Detection Features
 
-The Evidently AI drift monitor uses only the following two features from `prediction_log.csv`:
+The Evidently AI drift monitor uses the following features from `prediction_log.csv`:
 
 | Feature | Why it is used |
 | :--- | :--- |
 | `avg_confidence` | Reflects how familiar the model finds the incoming images. A drop signals the model is seeing patterns outside its training distribution. |
 | `avg_bbox_area` | Reflects the physical scale of defects. A shift indicates changes in camera setup, PCB layout, or defect type — all signs of input distribution change. |
-
-`num_detections` is intentionally excluded. It measures the actual defect rate of the PCBs being inspected, which varies with production quality and is not an indicator of input distribution shift. Including it would cause false drift alarms on clean or heavily defective batches.
+| `pass_fail` | Captures the aggregate failure rate. A shift in the proportion of failed boards indicates a population-level change that justifies retraining. |
