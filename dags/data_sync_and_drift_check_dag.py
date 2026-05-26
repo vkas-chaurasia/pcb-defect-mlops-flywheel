@@ -11,7 +11,7 @@ default_args = {
 }
 
 with DAG(
-    'pcb_drift_monitoring',
+    'pcb_data_sync_and_drift_check',
     default_args=default_args,
     schedule_interval=timedelta(days=1),
     start_date=datetime(2026, 1, 1),
@@ -31,6 +31,5 @@ with DAG(
             'GITHUB_REPO': os.getenv('GITHUB_REPO') or '{{ var.value.get("github_repo", "") }}',
         }
     )
-
 
     sync_labels >> drift_monitor

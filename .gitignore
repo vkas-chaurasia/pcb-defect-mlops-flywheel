@@ -249,4 +249,5 @@ monitoring/prediction_log.csv
 
 /mlflow-official-history
 .airflow/
+monitoring/evidently_workspace/
 
