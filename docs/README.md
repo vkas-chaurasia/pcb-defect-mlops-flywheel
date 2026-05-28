@@ -11,7 +11,7 @@ This folder contains the presentation slide deck and architecture diagrams.
 | [`presentation.pptx`](presentation.pptx) | Exported PowerPoint (re-generate after edits) |
 | [`diagrams.md`](diagrams.md) | Standalone system architecture diagram |
 | [`diagrams/`](diagrams/) | Pre-rendered SVG diagrams embedded in slides |
-| [`Demo`](demo/Demo.mp4) | Sped up demo video |
+| [`Demo.mp4`](demo/Demo.mp4) | Sped up demo video |
 
 ---
 

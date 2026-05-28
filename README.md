@@ -218,6 +218,7 @@ FastAPI automatically routes low-confidence detections to Label Studio for human
 | [`docs/presentation.pptx`](docs/presentation.pptx) | Exported PowerPoint |
 | [`docs/diagrams/`](docs/diagrams/) | Pre-rendered SVG diagrams used in slides |
 | [`docs/diagrams.md`](docs/diagrams.md) | Standalone system architecture diagram |
+| [`docs/Demo.mp4`](docs/demo/Demo.mp4) | Sped up demo video |
 
 See **[docs/README.md](docs/README.md)** for full export instructions (PDF, PPTX, and diagram regeneration).
 
