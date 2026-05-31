@@ -27,7 +27,7 @@ This repository implements a production-grade MLOps ecosystem for automated PCB 
 
 ## System Architecture
 
-Two-pipeline design: the **CI/CD training loop** (top) continuously produces better models; the **serving and monitoring loop** (bottom) runs them in production. The flywheel closes when drift triggers retraining.
+Two-pipeline design: the **CI/CD training loop** (left) continuously produces better models; the **serving and monitoring loop** (right) runs them in production. The flywheel closes when drift triggers retraining.
 
 ```mermaid
 %%{init: {
